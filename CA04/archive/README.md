@@ -1,11 +1,9 @@
 # 1. Directory structure:
 
-PNGImages:   All the database images in PNG format.
-
-PedMasks :   Mask for each image, also in PNG format. Pixels are labeled 0 for background, or > 0 corresponding
+- [PNGImages](PNGImages):   All the database images in PNG format.
+- [PedMasks](PedMasks):   Mask for each image, also in PNG format. Pixels are labeled 0 for background, or > 0 corresponding
 to a particular pedestrian ID.
-
-Annotation:  Annotation information for each image.  Each file is in the following format (take FudanPed00001.txt as an example):
+- [Annotation](Annotation):  Annotation information for each image.  Each file is in the following format (take FudanPed00001.txt as an example):
 
 ## Compatible with PASCAL Annotation Version 1.00
 Image filename : "PennFudanPed/PNGImages/FudanPed00001.png"
