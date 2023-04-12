@@ -26,7 +26,7 @@ Bounding box for object 2 "PASpersonWalking" (Xmin, Ymin) - (Xmax, Ymax) : (420,
 Pixel mask for object 2 "PASpersonWalking" : "PennFudanPed/PedMasks/FudanPed00001_mask.png"
 
 # 2. Notice
-   In [1], we did not label very small, highly occluded pedestrians. 
+   In <a href='#ref1'>[1]</a>, we did not label very small, highly occluded pedestrians. 
 However in this release of the dataset, we have labeled these pedestrians for future detection.
 We list the newly-labeled pedestrians in the file "added-object-list.txt".
 
@@ -41,4 +41,4 @@ Copyright and all rights therein are retained by authors or by other copyright h
  the explicit permission of the copyright holder.
 
 # 4. Related publication
-[1] Object Detection Combining Recognition and Segmentation. Liming Wang, Jianbo Shi, Gang Song, I-fan Shen. To Appear in Eighth Asian Conference on Computer Vision(ACCV) 2007
+<a id='ref1'></a>[1] Object Detection Combining Recognition and Segmentation. Liming Wang, Jianbo Shi, Gang Song, I-fan Shen. To Appear in Eighth Asian Conference on Computer Vision(ACCV) 2007
