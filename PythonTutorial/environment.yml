@@ -15,3 +15,6 @@ dependencies:
   - nb_conda_kernels
   - pip:
     - torchviz
+    - scikit-image
+    - pandas
+    - pillow
