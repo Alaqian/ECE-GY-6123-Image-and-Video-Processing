@@ -5,6 +5,8 @@
 - <a href='#p1a'>Part (a)</a>
 - <a href='#p1b'>Part (b)</a>
 - <a href='#p1c'>Part (c)</a>
+    - [Architecture](#Architecture)
+    - [Loss Function](#Loss-Function)
 - <a href='#p1d'>Part (d)</a>
 - <a href='#p2a'>Part (e)</a>
 - <a href='#p2b'>Part (f)</a>
@@ -90,11 +92,6 @@ class PennFudanDataset(Dataset):
 
 
 ```python
-augmentation = transforms.Compose([
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomResizedCrop(128, antialias=None)
-    ])
-
 # Plot a subplot of the original and the augmented image and mask
 train_dataset = PennFudanDataset(train_image_paths, train_mask_paths)
 image, mask = train_dataset[0]
@@ -107,7 +104,11 @@ ax[0,2].imshow(image.permute(1, 2, 0))
 ax[0,2].imshow(mask, alpha=0.5)
 ax[0,2].set_title("Original Mask Overlayed on Image")
 
-
+image_size = 128
+augmentation = transforms.Compose([
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomResizedCrop(image_size, antialias=None)
+    ])
 augmented_train_dataset = PennFudanDataset(train_image_paths, train_mask_paths, transform=augmentation)
 image, mask = augmented_train_dataset[0]
 ax[1,0].imshow(image.permute(1, 2, 0))
@@ -117,18 +118,27 @@ ax[1,1].set_title("Augmented Mask")
 ax[1,2].imshow(image.permute(1, 2, 0))
 ax[1,2].imshow(mask, alpha=0.5)
 ax[1,2].set_title("Original Mask Overlayed on Image")
+
+NUM_EPOCHS = 40
+batchsize = 8
+learning_rate=0.001
+
+train_loader = DataLoader(augmented_train_dataset, batch_size=batchsize, shuffle=True)
+test_dataset = PennFudanDataset(
+    test_image_paths,
+    test_mask_paths, 
+    transform=transforms.RandomResizedCrop(image_size, antialias=None))
+test_loader = DataLoader(test_dataset, batch_size=batchsize, shuffle=False)
+val_dataset = PennFudanDataset(
+    val_image_paths, 
+    val_mask_paths, 
+    transform=transforms.RandomResizedCrop(image_size, antialias=None))
+val_loader = DataLoader(test_dataset, batch_size=batchsize, shuffle=False)
 ```
 
 
-
-
-    Text(0.5, 1.0, 'Original Mask Overlayed on Image')
-
-
-
-
     
-![png](README_files/README_6_1.png)
+![png](README_files/README_6_0.png)
     
 
 
@@ -136,6 +146,12 @@ ax[1,2].set_title("Original Mask Overlayed on Image")
 ##### (c) Implement and train a CNN for binary segmentation on your train split. Describe your network architecture, loss function, and any training hyper-parameters. You may implement any architecture you'd like, **but the implementation must be your own code.**
 
 [Table of Contents](#Table-of-Contents)
+
+#### Architecture
+
+`x` (input) → `Conv_BN_ReLU1` → `Downsample1` → `x1` → `x2` → `Conv_BN_ReLU2` → `x3` → `Downsample2` → `x4` → `Conv_BN_ReLU3` → `x5` → `Upsample1` → `x6` → `cat(x3)` → `x7` → `Conv_BN_ReLU4` → `x8` → `Upsamle2` → `x9` → `cat(x1)` → `x10` → `Conv_BN_ReLU5` → `x11` → `conv6` → `x12` → `sigmoid` → `x13` (output)
+
+![Architecture](UNET.png)
 
 
 ```python
@@ -180,19 +196,52 @@ class UNET(nn.Module):
         return x13
 ```
 
-#### Architecture
-
-`x` (input) → `Conv_BN_ReLU1` → `Downsample1` → `x1` → `x2` → `Conv_BN_ReLU2` → `x3` → `Downsample2` → `x4` → `Conv_BN_ReLU3` → `x5` → `Upsample1` → `x6` → `cat(x3)` → `x7` → `Conv_BN_ReLU4` → `x8` → `Upsamle2` → `x9` → `cat(x1)` → `x10` → `Conv_BN_ReLU5` → `x11` → `conv6` → `x12` → `sigmoid` → `x13` (output)
-
-![Architecture](UNET.png)
-
-<a id='p1d'></a>
-##### (d) Report training loss, validation loss, and validation DICE curves. Comment on any overfitting or underfitting observed.
+#### Loss Function
 
 [Table of Contents](#Table-of-Contents)
 
 
+```python
+def dice_coefficient(pred, target):
+    smooth = 1.
+    pred = pred.view(-1)
+    target = target.view(-1)
+    intersection = (pred * target).sum()
+    return (2. * intersection + smooth) / (pred.sum() + target.sum() + smooth)
 
+class SoftDiceLoss(nn.Module):
+    def __init__(self):
+        super(SoftDiceLoss, self).__init__()
+    
+    def forward(self, pred, target):
+        smooth = 1.
+        pred = pred.view(-1)
+        target = target.view(-1)
+        intersection = (pred * target).sum()
+        return 1 - (2. * intersection + smooth) / ((pred ** 2).sum() + (target ** 2).sum() + smooth)
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = UNET().to(device)
+criterion = SoftDiceLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+def save_checkpoint(filename, model, optimizer, epoch, val_loss):
+    torch.save({
+        "model": model.state_dict(),
+        "optimizer": optimizer.state_dict(),
+        "epoch": epoch,
+        "loss": val_loss}, filename)
+    
+def load_checkpoint(filename, model, optimizer):
+    checkpoint = torch.load(filename)
+    model.load_state_dict(checkpoint["model"])
+    optimizer.load_state_dict(checkpoint["optimizer"])
+    epoch = checkpoint["epoch"]
+    loss = checkpoint["loss"]
+    return model, optimizer, epoch, loss
+```
+
+<a id='p1d'></a>
 ##### (d) Report training loss, validation loss, and validation DICE curves. Comment on any overfitting or underfitting observed.
 
 [Table of Contents](#Table-of-Contents)
