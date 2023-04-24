@@ -25,6 +25,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from torchvision import transforms
+from tqdm import tqdm
 
 %matplotlib inline
 ```
@@ -107,7 +108,7 @@ ax[0,2].set_title("Original Mask Overlayed on Image")
 image_size = 128
 augmentation = transforms.Compose([
     transforms.RandomHorizontalFlip(),
-    transforms.RandomResizedCrop(image_size, antialias=None)
+    transforms.RandomResizedCrop(image_size)
     ])
 augmented_train_dataset = PennFudanDataset(train_image_paths, train_mask_paths, transform=augmentation)
 image, mask = augmented_train_dataset[0]
@@ -127,12 +128,12 @@ train_loader = DataLoader(augmented_train_dataset, batch_size=batchsize, shuffle
 test_dataset = PennFudanDataset(
     test_image_paths,
     test_mask_paths, 
-    transform=transforms.RandomResizedCrop(image_size, antialias=None))
+    transform=transforms.RandomResizedCrop(image_size))
 test_loader = DataLoader(test_dataset, batch_size=batchsize, shuffle=False)
 val_dataset = PennFudanDataset(
     val_image_paths, 
     val_mask_paths, 
-    transform=transforms.RandomResizedCrop(image_size, antialias=None))
+    transform=transforms.RandomResizedCrop(image_size))
 val_loader = DataLoader(test_dataset, batch_size=batchsize, shuffle=False)
 ```
 
@@ -219,12 +220,14 @@ class SoftDiceLoss(nn.Module):
         target = target.view(-1)
         intersection = (pred * target).sum()
         return 1 - (2. * intersection + smooth) / ((pred ** 2).sum() + (target ** 2).sum() + smooth)
+```
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = UNET().to(device)
-criterion = SoftDiceLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+#### Training
 
+[Table of Contents](#Table-of-Contents)
+
+
+```python
 def save_checkpoint(filename, model, optimizer, epoch, val_loss):
     torch.save({
         "model": model.state_dict(),
@@ -239,6 +242,39 @@ def load_checkpoint(filename, model, optimizer):
     epoch = checkpoint["epoch"]
     loss = checkpoint["loss"]
     return model, optimizer, epoch, loss
+
+def train(model, train_loader, optimizer, criterion, device):
+    model.train()
+    train_loss = 0
+    for image, mask in train_loader:
+        image = image.to(device)
+        mask = mask.to(device)
+        optimizer.zero_grad()
+        pred = model(image)
+        loss = criterion(pred, mask)
+        loss.backward()
+        optimizer.step()
+        train_loss += loss.item()
+    return train_loss / len(train_loader)
+
+def evaluate(model, val_loader, criterion, device):
+    model.eval()
+    val_loss = 0
+    with torch.no_grad():
+        for image, mask in val_loader:
+            image = image.to(device)
+            mask = mask.to(device)
+            pred = model(image)
+            loss = criterion(pred, mask)
+            val_loss += loss.item()
+    return val_loss / len(val_loader)
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = UNET().to(device)
+criterion = SoftDiceLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+
 ```
 
 <a id='p1d'></a>
