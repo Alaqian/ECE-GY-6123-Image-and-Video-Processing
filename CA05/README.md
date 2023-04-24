@@ -120,17 +120,9 @@ def harris(Ix, Iy , input_image,N):
     ################################################ TODO ###############################################
     # Write code segment to find N harris points in the image
     # Refer to the page 17 of slides on features for the equation
-    A = np.zeros((l,m,2,2))
-    A[:,:,0,0] = Ix2_smooth
-    A[:,:,0,1] = Ixy_smooth
-    A[:,:,1,0] = Ixy_smooth
-    A[:,:,1,1] = Iy2_smooth
-    
-    # Calculate the harris values for each pixel
-    H = np.zeros((l,m))
-    for i in range(0,l):
-        for j in range(0,m):
-            H[i,j] = np.trace(A[i,j,:,:]) - 0.04*(np.trace(A[i,j,:,:]))**2
+    det = Ix2_smooth*Iy2_smooth - Ixy_smooth**2
+    trace = Ix2_smooth + Iy2_smooth
+    H = det - 0.06*trace**2
             
     ################################################ TODO ###############################################
     # Save a copy of the original harris values before detecting local max
@@ -146,8 +138,7 @@ def harris(Ix, Iy , input_image,N):
             # Take a WxW patch centered at point (i,j), check if the center point is larger than all other points
             # in this patch. If it is NOT local max, set H_max[i,j] = 0
             patch = H[i-a:i+a+1,j-a:j+a+1]
-            center = patch[a, a]
-            if np.max(patch) > center:
+            if H[i,j] < np.max(patch):
                 H_max[i,j] = 0
     
     # Multiply the mask with H, points that are not local max will become zero
@@ -159,7 +150,7 @@ def harris(Ix, Iy , input_image,N):
     # Sort the harris values in descending order
     idx = np.argsort(H.flatten())[::-1][:N]
     # Get the coordinates of the N largest harris values
-    y, x = np.unravel_index(idx, H.shape)
+    x, y = np.unravel_index(idx, H.shape)
     
     # x,y should be arrays/lists of x and y coordinates of the harris points.
     return x,y,H0
@@ -201,7 +192,7 @@ axs[0, 1].imshow(Iy, cmap='gray')
 axs[0, 1].set_title('Iy')
 
 axs[1, 0].imshow(input_image, cmap='gray')
-axs[1, 0].plot(x, y,'ro')
+axs[1, 0].plot(y, x,'ro')
 axs[1, 0].set_title('Original image with Harris points')
 
 axs[1, 1].imshow(H0, cmap='gray')
