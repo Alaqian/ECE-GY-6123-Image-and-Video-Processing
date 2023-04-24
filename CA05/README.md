@@ -100,30 +100,38 @@ def harris(Ix, Iy , input_image,N):
     ################################################ TODO ###############################################
     #Forming 3 images
     #Ix square
-    Ix2 = ... 
+    Ix2 = Ix*Ix
     #Iy square
-    Iy2 = ... 
+    Iy2 = Iy*Iy
     #Ix*Iy
-    Ixy = ... 
+    Ixy = Ix*Iy
     
     # Smooth image Ix2, Iy2, Ixy  with Gaussian filter with sigma=2, size=7.
     # Get the gauss filter for smoothing (reuse what you have)
-    gauss_smooth, _, _ = ...
+    gauss_smooth, _, _ = gauss(7,2)
     Ix2_smooth = convolveim(Ix2, gauss_smooth, mode='nearest')
     ################################################ TODO ###############################################
     # CONVOLVE as shown above
-    Iy2_smooth = ...  
-    Ixy_smooth = ...
+    Iy2_smooth = convolveim(Iy2, gauss_smooth, mode='nearest')  
+    Ixy_smooth = convolveim(Ixy, gauss_smooth, mode='nearest')
     # By doing this, Ix2_smooth, Iy2_smooth, Ixy_smooth are the three values needed to calculate 
     # the A matrix for each pixel.
-    
+
     ################################################ TODO ###############################################
     # Write code segment to find N harris points in the image
     # Refer to the page 17 of slides on features for the equation
-    det = ...
-    trace = ...
-    H = ...
+    A = np.zeros((l,m,2,2))
+    A[:,:,0,0] = Ix2_smooth
+    A[:,:,0,1] = Ixy_smooth
+    A[:,:,1,0] = Ixy_smooth
+    A[:,:,1,1] = Iy2_smooth
     
+    # Calculate the harris values for each pixel
+    H = np.zeros((l,m))
+    for i in range(0,l):
+        for j in range(0,m):
+            H[i,j] = np.trace(A[i,j,:,:]) - 0.06*(np.trace(A[i,j,:,:]))**2
+            
     ################################################ TODO ###############################################
     # Save a copy of the original harris values before detecting local max
     H0 = H    
@@ -137,16 +145,24 @@ def harris(Ix, Iy , input_image,N):
         for j in range(a,m+a):
             # Take a WxW patch centered at point (i,j), check if the center point is larger than all other points
             # in this patch. If it is NOT local max, set H_max[i,j] = 0
-            patch = ...
-            ...
+            patch = H[i-a:i+a+1,j-a:j+a+1]
+            if H[i,j] < np.max(patch):
+                H_max[i,j] = 0
     
     # Multiply the mask with H, points that are not local max will become zero
     H = H_max*H      
     H = H[a:-a,a:-a]
-    
+        
     # Find largest N points' coordinates
     # Hint: use np.argsort() and np.unravel_index() to sort H and get the index in sorted order
-    ...
+    # Sort the harris values in descending order
+    H_sort = np.argsort(H.flatten())[::-1]
+    # Get the coordinates of the N largest harris values
+    x = []
+    y = []
+    for i in range(0,N):
+        x.append(np.unravel_index(H_sort[i],H.shape)[1])
+        y.append(np.unravel_index(H_sort[i],H.shape)[0])
     
     # x,y should be arrays/lists of x and y coordinates of the harris points.
     return x,y,H0
@@ -164,7 +180,7 @@ img = cv2.normalize(input_image, None, alpha=0, beta=255, norm_type=cv2.NORM_MIN
 sigma = 1
 size = int(4*sigma + 1)
 # Function call to gauss
-gauss_filt, gauss_filt_dx, gauss_filt_dy = ... 
+gauss_filt, gauss_filt_dx, gauss_filt_dy = gauss(size,sigma)
 
     
 ################################################ TODO ###############################################
@@ -172,15 +188,35 @@ gauss_filt, gauss_filt_dx, gauss_filt_dy = ...
 # Convolve image with dx filter
 Ix = convolveim(input_image,gauss_filt_dx,mode ='nearest') 
 # Convolve image with dy filter
-Iy = ... 
+Iy = convolveim(input_image,gauss_filt_dy,mode ='nearest')
 
 x,y,H0 = harris(Ix, Iy ,input_image,100)
 ################################################ TODO ###############################################
 # Plot: Ix, Iy, Original image with harris point labeled in red dots, H0 harris value image
 # Hint: you may use "plt.plot(y,x, 'ro')"   # Note: x is vertical and y is horizontal in our above definition
                                             # But when plotting the point, the definition is reversed
-
+fig = plt.figure(figsize=(15,15))
+ax1 = fig.add_subplot(221)
+ax1.imshow(Ix,cmap='gray')
+ax1.set_title('Ix')
+ax2 = fig.add_subplot(222)
+ax2.imshow(Iy,cmap='gray')
+ax2.set_title('Iy')
+ax3 = fig.add_subplot(223)
+ax3.imshow(input_image,cmap='gray')
+ax3.plot(y,x,'ro')
+ax3.set_title('Original image with harris point labeled in red dots')
+ax4 = fig.add_subplot(224)
+ax4.imshow(H0,cmap='gray')
+ax4.set_title('H0 harris value image')
+plt.show()
 ```
+
+
+    
+![png](README_files/README_6_0.png)
+    
+
 
 ## PART B - SIFT descriptor
 
