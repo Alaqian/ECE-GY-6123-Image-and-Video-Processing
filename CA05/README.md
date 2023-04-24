@@ -130,7 +130,7 @@ def harris(Ix, Iy , input_image,N):
     H = np.zeros((l,m))
     for i in range(0,l):
         for j in range(0,m):
-            H[i,j] = np.trace(A[i,j,:,:]) - 0.06*(np.trace(A[i,j,:,:]))**2
+            H[i,j] = np.trace(A[i,j,:,:]) - 0.04*(np.trace(A[i,j,:,:]))**2
             
     ################################################ TODO ###############################################
     # Save a copy of the original harris values before detecting local max
@@ -146,7 +146,8 @@ def harris(Ix, Iy , input_image,N):
             # Take a WxW patch centered at point (i,j), check if the center point is larger than all other points
             # in this patch. If it is NOT local max, set H_max[i,j] = 0
             patch = H[i-a:i+a+1,j-a:j+a+1]
-            if H[i,j] < np.max(patch):
+            center = patch[a, a]
+            if np.max(patch) > center:
                 H_max[i,j] = 0
     
     # Multiply the mask with H, points that are not local max will become zero
@@ -156,13 +157,9 @@ def harris(Ix, Iy , input_image,N):
     # Find largest N points' coordinates
     # Hint: use np.argsort() and np.unravel_index() to sort H and get the index in sorted order
     # Sort the harris values in descending order
-    H_sort = np.argsort(H.flatten())[::-1]
+    idx = np.argsort(H.flatten())[::-1][:N]
     # Get the coordinates of the N largest harris values
-    x = []
-    y = []
-    for i in range(0,N):
-        x.append(np.unravel_index(H_sort[i],H.shape)[1])
-        y.append(np.unravel_index(H_sort[i],H.shape)[0])
+    y, x = np.unravel_index(idx, H.shape)
     
     # x,y should be arrays/lists of x and y coordinates of the harris points.
     return x,y,H0
@@ -195,20 +192,21 @@ x,y,H0 = harris(Ix, Iy ,input_image,100)
 # Plot: Ix, Iy, Original image with harris point labeled in red dots, H0 harris value image
 # Hint: you may use "plt.plot(y,x, 'ro')"   # Note: x is vertical and y is horizontal in our above definition
                                             # But when plotting the point, the definition is reversed
-fig = plt.figure(figsize=(15,15))
-ax1 = fig.add_subplot(221)
-ax1.imshow(Ix,cmap='gray')
-ax1.set_title('Ix')
-ax2 = fig.add_subplot(222)
-ax2.imshow(Iy,cmap='gray')
-ax2.set_title('Iy')
-ax3 = fig.add_subplot(223)
-ax3.imshow(input_image,cmap='gray')
-ax3.plot(y,x,'ro')
-ax3.set_title('Original image with harris point labeled in red dots')
-ax4 = fig.add_subplot(224)
-ax4.imshow(H0,cmap='gray')
-ax4.set_title('H0 harris value image')
+fig, axs = plt.subplots(2, 2, figsize=(12, 12))
+
+axs[0, 0].imshow(Ix, cmap='gray')
+axs[0, 0].set_title('Ix')
+
+axs[0, 1].imshow(Iy, cmap='gray')
+axs[0, 1].set_title('Iy')
+
+axs[1, 0].imshow(input_image, cmap='gray')
+axs[1, 0].plot(x, y,'ro')
+axs[1, 0].set_title('Original image with Harris points')
+
+axs[1, 1].imshow(H0, cmap='gray')
+axs[1, 1].set_title('Harris values')
+
 plt.show()
 ```
 
