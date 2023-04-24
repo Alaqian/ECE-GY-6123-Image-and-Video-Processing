@@ -3,7 +3,10 @@
 ## Alaqian Zafar - aaz7118
 
 ## Table of Contents
-1. <a href='#pa'>PART A - Harris detector</a>
+1. <a href='#pa'>PART A - Harris Detector</a>
+2. <a href='#pb'>PART B - SIFT Detector</a>
+3. <a href='#pc'>PART C - Feature Matching</a>
+4. <a href='#pd'>PART D - Panorama Stiching</a>
 
 
 ```python
