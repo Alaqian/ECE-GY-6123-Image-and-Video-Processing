@@ -556,13 +556,31 @@ with torch.no_grad():
     image = image.cpu().numpy()
     pred = np.squeeze(pred, axis=1)
     fig, ax = plt.subplots(1, 3, figsize=(15, 15))
-    ax[0].imshow(image[2].transpose(1, 2,0))
+    ax[0].imshow(image[4].transpose(1, 2,0))
     ax[0].set_title("Image")
-    ax[1].imshow(mask[2], cmap="gray")
+    ax[1].imshow(mask[4], cmap="gray")
     ax[1].set_title("Mask")
-    ax[2].imshow(pred[2], cmap="gray")
+    ax[2].imshow(pred[4], cmap="gray")
     ax[2].set_title("Prediction")
     plt.show()
+
+    for image in os.listdir("./out_of_distribution_images"):
+        image = cv2.imread(os.path.join("./out_of_distribution_images", image))
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = cv2.resize(image, (128, 128))
+        image = image.transpose(2, 0, 1)
+        image = image / 255
+        image = torch.from_numpy(image).float()
+        image = image.to(device)
+        pred = model(image[None, ...])
+        pred = pred.cpu().numpy()
+        pred = np.squeeze(pred, axis=1)
+        plt.subplot(1, 2, 1)
+        plt.imshow(image.cpu().numpy().transpose(1, 2, 0))
+        plt.subplot(1, 2, 2)
+        plt.imshow(pred[0], cmap="gray")
+        plt.show()
+        
 
 ```
 
@@ -570,6 +588,27 @@ with torch.no_grad():
     
 ![png](README_files/README_14_0.png)
     
+
+
+
+    
+![png](README_files/README_14_1.png)
+    
+
+
+
+    
+![png](README_files/README_14_2.png)
+    
+
+
+
+    
+![png](README_files/README_14_3.png)
+    
+
+
+The model is trained for 40 epochs and the results are shown below. The model is able to detect the edges of the objects in the image and the mask. The model is not able to detect the objects completely. This is because the dataset is very small and the model is not able to learn the features of the objects. The model is also not able to detect the objects that are not present in the training set.
 
 
 <a id='p1d'></a>
