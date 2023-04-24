@@ -58,20 +58,28 @@ def gauss(size, sigma):
 gauss1, gauss1_dx, gauss1_dy = gauss(7,1)
 plt.figure()
 plt.subplot(1,3,1)
-plt.imshow(gauss1, cmap='gray')
+plt.imshow(gauss1)
 plt.subplot(1,3,2)
-plt.imshow(gauss1_dx)
+plt.imshow(gauss1_dx, cmap='gray')
 plt.subplot(1,3,3)
-plt.imshow(gauss1_dy)
-# visualize the filters in 3D
+plt.imshow(gauss1_dy, cmap='gray')
+plt.show()
 
+# visualize the filters in 3D
+from mpl_toolkits.mplot3d import Axes3D
+x = np.arange(0,7)
+y = np.arange(0,7)
+X, Y = np.meshgrid(x, y)
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.plot_surface(X, Y, gauss1, cmap='viridis')
+plt.show()
 ```
 
 
-
-
-    <matplotlib.image.AxesImage at 0x23d55e5a1f0>
-
+    
+![png](README_files/README_4_0.png)
+    
 
 
 
