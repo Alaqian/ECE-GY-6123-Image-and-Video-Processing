@@ -1,5 +1,9 @@
 # Computer Assignment 5
 ## Feature Detection, Image Stitching
+## Alaqian Zafar - aaz7118
+
+## Table of Contents
+1. <a href='#pa'>PART A - Harris detector</a>
 
 
 ```python
@@ -11,6 +15,7 @@ import scipy.ndimage.filters as filters
 import scipy.ndimage as ndimage
 ```
 
+<a id='pa'></a>
 ## PART A - Harris detector
 
 - Write your own program for Harris corner point detection at a fixed scale. Your program should contain the following steps:
@@ -26,12 +31,12 @@ import scipy.ndimage as ndimage
 
 
 ```python
-def gauss(size, sigma):
+def gauss(size,sigma):
     """
     This function will generate 3 filters given the size of the filter and sigma of Gaussian: 
     1: gaussian filter;
     2: derivative of gaussian filters in x and y direction.
-    """
+"""
     # define the x range
     x_ax = np.arange(0,size) - size/2 + 0.5
         
@@ -353,11 +358,6 @@ for i in range(0,10):
     ax1.plot(final_points[i][1],final_points[i][0], 'ro')
     ax2.bar(np.arange(1,129),final_descriptor[i,:])
     plt.show()
-```
-
-
-```python
-
 ```
 
 ## PART C - correspondance in 2 images

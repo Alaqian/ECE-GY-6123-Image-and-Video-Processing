@@ -14579,7 +14579,10 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="Computer-Assignment-5">Computer Assignment 5<a class="anchor-link" href="#Computer-Assignment-5">&#182;</a></h1><h2 id="Feature-Detection,-Image-Stitching">Feature Detection, Image Stitching<a class="anchor-link" href="#Feature-Detection,-Image-Stitching">&#182;</a></h2>
+<h1 id="Computer-Assignment-5">Computer Assignment 5<a class="anchor-link" href="#Computer-Assignment-5">&#182;</a></h1><h2 id="Feature-Detection,-Image-Stitching">Feature Detection, Image Stitching<a class="anchor-link" href="#Feature-Detection,-Image-Stitching">&#182;</a></h2><h2 id="Alaqian-Zafar---aaz7118">Alaqian Zafar - aaz7118<a class="anchor-link" href="#Alaqian-Zafar---aaz7118">&#182;</a></h2><h2 id="Table-of-Contents">Table of Contents<a class="anchor-link" href="#Table-of-Contents">&#182;</a></h2><ol>
+<li><a href='#pa'>PART A - Harris detector</a></li>
+</ol>
+
 </div>
 </div>
 </div>
@@ -14611,6 +14614,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><a id='pa'></a></p>
 <h2 id="PART-A---Harris-detector">PART A - Harris detector<a class="anchor-link" href="#PART-A---Harris-detector">&#182;</a></h2>
 </div>
 </div>
@@ -14647,12 +14651,12 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[2]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">gauss</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">gauss</span><span class="p">(</span><span class="n">size</span><span class="p">,</span><span class="n">sigma</span><span class="p">):</span>
     <span class="sd">"""</span>
 <span class="sd">    This function will generate 3 filters given the size of the filter and sigma of Gaussian: </span>
 <span class="sd">    1: gaussian filter;</span>
 <span class="sd">    2: derivative of gaussian filters in x and y direction.</span>
-<span class="sd">    """</span>
+<span class="sd">"""</span>
     <span class="c1"># define the x range</span>
     <span class="n">x_ax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">size</span><span class="p">)</span> <span class="o">-</span> <span class="n">size</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="mf">0.5</span>
         
@@ -15105,22 +15109,6 @@ class="
     <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">final_points</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="n">final_points</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="s1">'ro'</span><span class="p">)</span>
     <span class="n">ax2</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">129</span><span class="p">),</span><span class="n">final_descriptor</span><span class="p">[</span><span class="n">i</span><span class="p">,:])</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[&nbsp;]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span> 
 </pre></div>
 
      </div>
