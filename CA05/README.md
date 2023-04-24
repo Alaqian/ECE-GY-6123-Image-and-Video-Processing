@@ -3,10 +3,10 @@
 ## Alaqian Zafar - aaz7118
 
 ## Table of Contents
-1. <a href='#pa'>PART A - Harris Detector</a>
-2. <a href='#pb'>PART B - SIFT Detector</a>
-3. <a href='#pc'>PART C - Feature Matching</a>
-4. <a href='#pd'>PART D - Panorama Stiching</a>
+- <a href='#pa'>PART A - Harris Detector</a>
+- <a href='#pb'>PART B - SIFT Detector</a>
+- <a href='#pc'>PART C - Feature Matching</a>
+- <a href='#pd'>PART D - Panorama Stiching</a>
 
 
 ```python
@@ -215,6 +215,7 @@ plt.show()
     
 
 
+<a id='pb'></a>
 ## PART B - SIFT descriptor
 
 Write a program that can generate SIFT descriptor for each detected feature point using your program in Prob. 1. You may follow the following steps:
@@ -243,7 +244,8 @@ def histo(theta4,mag4):
     temp = np.zeros((1,8),dtype='float32')
     ################################################ TODO ###############################################
     # write code segment to add the magnitudes of all vectors in same orientations
-    ...
+    for i in range(8):
+        temp[0,i] = np.sum(mag4[theta4==i])    
     
     # temp should be a 1x8 vector, where each value corresponds to an orientation and 
     # contains the sum of all gradient magnitude, oriented in that orientation
@@ -261,8 +263,8 @@ def descriptor(theta16,mag16):
     ################################################ TODO ###############################################
     # Make function call to histo, with arguments theta16 and mag16_fil
     # This is used for find the location of maximum theta
-    histo16 = ... 
-    maxloc_theta16 = ...
+    histo16 = histo(theta16,mag16_filt)
+    maxloc_theta16 = np.argmax(histo16)
 
     for i in range(0,16,4):
         for j in range(0,16,4):
@@ -270,12 +272,14 @@ def descriptor(theta16,mag16):
             # Use histo function to create histogram of oriantations on 4x4 pathces in the neighbourhood of the harris points
             # You should shift your histogram for each cell so that the dominant orientation of the 16x16 patch becomes the first quantized orientation
             # You should update the variable desp to store all the orientation magnitude sum for each sub region of size 4x4
-            ...
+            histo4 = histo(theta16[i:i+4,j:j+4],mag16_filt[i:i+4,j:j+4])
+            desp = np.append(desp,np.roll(histo4,-maxloc_theta16))
 
     ################################################ TODO ###############################################
     # normalize descriptor, clip descriptor, normalize descriptor again
-    desp = ...
-    
+    desp = desp/np.linalg.norm(desp)
+    desp = np.clip(desp,0,0.2)
+    desp = desp/np.linalg.norm(desp)    
     
     desp = np.matrix(desp)
 
@@ -292,12 +296,12 @@ def part_B(input_image):
 
     # Generate derivative of Gaussian filters, using sigma=1, filter window size=4*sigma+1
     sigma = 1
-    _, filt_dx, filt_dy = ...
+    _, filt_dx, filt_dy = gauss(int(4*sigma + 1), sigma)
     
     ################################################ TODO ###############################################
     # Image convolved with filt_dx and filt_dy
-    img_x = ...    
-    img_y = ... 
+    img_x = cv2.filter2D(img, -1, filt_dx)
+    img_y = cv2.filter2D(img, -1, filt_dy)
 
     # Calculate magnitude and theta, then quantize theta.
     mag = np.sqrt(img_x ** 2 + img_y ** 2)
@@ -309,28 +313,31 @@ def part_B(input_image):
     # Quantize theta to 0,1,2,... 7, see instructions above
     q = 45
     N = 8
-    theta_q = 
+    theta_q = np.floor(theta/q)
+    theta_q[theta_q==N] = 0
+    theta_q = theta_q.astype('uint8')
     
     ################################################ TODO ###############################################
     # Call harris function to find 100 feature points 
-    x,y,_ = ... 
+    x,y,_ = harris(img_x, img_y ,input_image,100)
     
     # Pad 15 rows and columns. You will need this extra border to get a patch centered at the feature point 
     #    when the feature points lie on the original border of the image.
     theta_q = cv2.copyMakeBorder(theta_q.astype('uint8'), 7,8,7,8, cv2.BORDER_REFLECT)
     ################################################ TODO ###############################################
-    mag =  ... # similarly add border to the magnitude image
+    mag = cv2.copyMakeBorder(mag, 7,8,7,8, cv2.BORDER_REFLECT) # similarly add border to the magnitude image
     final_descriptor = np.zeros((1,128))
-
+    
+    final_points = np.vstack((x,y)).T
     for i in range(final_points.shape[0]):
         # Since you have already added 15 rows and columns, now the new coordinates of the feature points are (x+8, y+8).
         # Then the patch should be [x[i]:x[i]+16,y[i]:y[i]16]
         # Your patch should be centered at the feature point.
         theta_temp = theta_q[x[i]:x[i]+16,y[i]:y[i]+16] 
         # similarly, take a 16x16 patch of mag around the point
-        mag_temp = ... 
+        mag_temp = mag[x[i]:x[i]+16,y[i]:y[i]+16]
         # function call to descriptors
-        temp2 = ... 
+        temp2 = descriptor(theta_temp,mag_temp)
         final_descriptor = np.vstack((final_descriptor,temp2))
 
     # Initially, final descriptor has a row of zeros. We are deleting that extra row here.
@@ -340,7 +347,7 @@ def part_B(input_image):
     
     # Combine x,y to form an array of size (Npoints,2) each row correspond to (x,y)
     # You could use np.hstack() or np.vstack()
-    final_points = ...
+    final_points = np.hstack((x.reshape(-1,1),y.reshape(-1,1)))
     
     return final_descriptor,final_points
 
@@ -362,6 +369,66 @@ for i in range(0,10):
     ax2.bar(np.arange(1,129),final_descriptor[i,:])
     plt.show()
 ```
+
+
+    
+![png](README_files/README_11_0.png)
+    
+
+
+
+    
+![png](README_files/README_11_1.png)
+    
+
+
+
+    
+![png](README_files/README_11_2.png)
+    
+
+
+
+    
+![png](README_files/README_11_3.png)
+    
+
+
+
+    
+![png](README_files/README_11_4.png)
+    
+
+
+
+    
+![png](README_files/README_11_5.png)
+    
+
+
+
+    
+![png](README_files/README_11_6.png)
+    
+
+
+
+    
+![png](README_files/README_11_7.png)
+    
+
+
+
+    
+![png](README_files/README_11_8.png)
+    
+
+
+
+    
+![png](README_files/README_11_9.png)
+    
+
 
 ## PART C - correspondance in 2 images
 
