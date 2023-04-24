@@ -14642,6 +14642,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </li>
 <li>Apply your Harris detector to a test image (you can just work on gray scale image). Using σ=1, N=100. Do the features detected make sense?</li>
 </ul>
+<p><a href="#Table-of-Contents">Table of Contents</a></p>
 
 </div>
 </div>
@@ -14955,6 +14956,7 @@ class="
 </li>
 <li><strong>For this assignment, you are not asked to do multiscale processing. You only need to generate the SIFT descriptors for those feature points detected by the Harris detector at the original image scale (from Part A).</strong></li>
 </ul>
+<p><a href="#Table-of-Contents">Table of Contents</a></p>
 
 </div>
 </div>
@@ -15314,6 +15316,7 @@ class="
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><a id='pc'></a></p>
 <h2 id="PART-C---correspondance-in-2-images">PART C - correspondance in 2 images<a class="anchor-link" href="#PART-C---correspondance-in-2-images">&#182;</a></h2>
 </div>
 </div>
@@ -15331,6 +15334,7 @@ class="
 <li>Write a program that can find matching points between the two images. For each detected point p in the first image, compute its distance to each detected point in the second image (using Euclidean distance between two SIFT descriptors, not spatial distance) to find two closest points q1 and q2 in the second image. Let us call the distance of p to q1 and q2 by d1 and d2, you will take point q1 as the matching point for p if d1/d2 &lt;r. Otherwise, you assume there is ambiguity between q1 and q2 and skip the feature point p in image 1. You can experiment with different threshold r (for example, r=[0.95, 0.8, 0.65, 0.5]). Obviously r should be &lt;1. At the end of this process, you should have a set of matching pairs.</li>
 <li>Create an image that shows the matching results. For example you can create a large image that has the left and right images side by side, and draw lines between matching pairs in these two images. Do the matched points look reasonable? You can use <strong>cv2.line()</strong> to draw line between each matching pair. Display the image after you add lines into the image array using the cv2.line() function.</li>
 </ul>
+<p><a href="#Table-of-Contents">Table of Contents</a></p>
 
 </div>
 </div>
@@ -15423,22 +15427,6 @@ class="
 </div>
 </div>
 
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[&nbsp;]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span> 
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
 </div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
 <div class="jp-Cell-inputWrapper">
@@ -15446,6 +15434,7 @@ class="
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><a id='pd'></a></p>
 <h2 id="PART-D---panorama-stiching">PART D - panorama stiching<a class="anchor-link" href="#PART-D---panorama-stiching">&#182;</a></h2>
 </div>
 </div>
@@ -15483,6 +15472,7 @@ In this part, you may use functions from cv2.</p>
 </li>
 </ul>
 <p><strong>In your report, show the left and right images, the left and right images with SIFT points indicated, the image that illustrates the matching line between corresponding points, the transformed left image, and finally the stitched image.</strong></p>
+<p><a href="#Table-of-Contents">Table of Contents</a></p>
 
 </div>
 </div>

@@ -31,6 +31,7 @@ import scipy.ndimage as ndimage
  - You should write your own functions to generate Guassian and derivative of Gaussian filters from the analytical forms (This is similar to Part2 in CA02).
 - Apply your Harris detector to a test image (you can just work on gray scale image). Using σ=1, N=100. Do the features detected make sense?
 
+[Table of Contents](#Table-of-Contents)
 
 
 ```python
@@ -234,6 +235,8 @@ Write a program that can generate SIFT descriptor for each detected feature poin
     - x) Renormalize the vector resulting from (ix).
 -  **For this assignment, you are not asked to do multiscale processing. You only need to generate the SIFT descriptors for those feature points detected by the Harris detector at the original image scale (from Part A).**
 
+[Table of Contents](#Table-of-Contents)
+
 
 ```python
 def histo(theta4,mag4):
@@ -430,12 +433,16 @@ for i in range(0,10):
     
 
 
+<a id='pc'></a>
 ## PART C - correspondance in 2 images
 
 Finding corresponding points in two images based on SIFT descriptors.
 -  Using your program in Part A and Part B to detect feature points and generate their descriptors for two images provided with this assignment.(image named **left** and **right**)
 -  Write a program that can find matching points between the two images. For each detected point p in the first image, compute its distance to each detected point in the second image (using Euclidean distance between two SIFT descriptors, not spatial distance) to find two closest points q1 and q2 in the second image. Let us call the distance of p to q1 and q2 by d1 and d2, you will take point q1 as the matching point for p if d1/d2 <r. Otherwise, you assume there is ambiguity between q1 and q2 and skip the feature point p in image 1. You can experiment with different threshold r (for example, r=[0.95, 0.8, 0.65, 0.5]). Obviously r should be <1. At the end of this process, you should have a set of matching pairs.
 -  Create an image that shows the matching results. For example you can create a large image that has the left and right images side by side, and draw lines between matching pairs in these two images. Do the matched points look reasonable? You can use **cv2.line()** to draw line between each matching pair. Display the image after you add lines into the image array using the cv2.line() function.
+
+
+[Table of Contents](#Table-of-Contents)
 
 
 ```python
@@ -494,11 +501,7 @@ for r in [0.95, 0.8, 0.65, 0.5]:
     plt.show()
 ```
 
-
-```python
-
-```
-
+<a id='pd'></a>
 ## PART D - panorama stiching
 
 Stitch two images into a panorama using SIFT feature detector and descriptor.
@@ -525,6 +528,8 @@ In this part, you may use functions from cv2.
 
 
 **In your report, show the left and right images, the left and right images with SIFT points indicated, the image that illustrates the matching line between corresponding points, the transformed left image, and finally the stitched image.**
+
+[Table of Contents](#Table-of-Contents)
 
 
 ```python
