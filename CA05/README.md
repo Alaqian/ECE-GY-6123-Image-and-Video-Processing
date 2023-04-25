@@ -474,7 +474,7 @@ plt.plot(keypoints_2[:,1],keypoints_2[:,0],'ro',ms=3)
 
 
 
-    [<matplotlib.lines.Line2D at 0x16b8c062790>]
+    [<matplotlib.lines.Line2D at 0x246fe1f9700>]
 
 
 
@@ -733,11 +733,10 @@ for m in rawMatches:
 ptsA = np.float32([kp1[i] for (_,i) in matches])
 ptsB = np.float32([kp2[i] for (i,_) in matches])
 
-
 ################################################ TODO ###############################################
 ### Similar to what we did in part C
 ### Create an image img_match that shows the matching results by drawing lines between corresponding points. 
-img_match = drawMatches(img1, img2, kp1, kp2, matches, status=)
+img_match = drawMatches(img1, img2, kp1, kp2, matches, status=np.ones(len(matches)))
 for p1, p2 in zip(ptsA, ptsB):
     cv2.line(img_match, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), (255, 255, 255), 1)
 plt.figure(figsize=(15,15))
@@ -747,10 +746,8 @@ plt.show()
 ```
 
 
-      Cell In[12], line 33
-        img_match = drawMatches(img1, img2, kp1, kp2, matches, status=)
-                                                                      ^
-    SyntaxError: invalid syntax
+    
+![png](README_files/README_24_0.png)
     
 
 
@@ -778,28 +775,6 @@ plt.figure(figsize=(20,40))
 plt.imshow(result,'gray')
 plt.title('Stitched image')
 ```
-
-
-    ---------------------------------------------------------------------------
-
-    error                                     Traceback (most recent call last)
-
-    Cell In[14], line 3
-          1 ################################################ TODO ###############################################
-          2 # Find homography with RANSAC
-    ----> 3 (H, status) = cv2.findHomography(...)
-          5 img_ransac = drawMatches(img1,img2,kp1,kp2,matches,status)
-          6 plt.figure(figsize=(15,15))
-    
-
-    error: OpenCV(4.6.0) :-1: error: (-5:Bad argument) in function 'findHomography'
-    > Overload resolution failed:
-    >  - findHomography() missing required argument 'dstPoints' (pos 2)
-    >  - findHomography() missing required argument 'dstPoints' (pos 2)
-    >  - findHomography() missing required argument 'dstPoints' (pos 2)
-    >  - findHomography() missing required argument 'dstPoints' (pos 2)
-    
-
 
 ### Please answer the following questions based on your observation:
 * For these 2 images, the matched features points are not necessary from the same depth (and therefore not on the same plane), why we could still relate them by a homography?
