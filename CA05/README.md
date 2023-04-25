@@ -476,7 +476,7 @@ plt.plot(keypoints_2[:,1],keypoints_2[:,0],'ro',ms=3)
 
 
 
-    [<matplotlib.lines.Line2D at 0x23e93016d30>]
+    [<matplotlib.lines.Line2D at 0x24927841430>]
 
 
 
@@ -801,7 +801,7 @@ plt.title('Stitched image')
 * For these 2 images, the matched features points are not necessary from the same depth (and therefore not on the same plane), why we could still relate them by a homography?
 * Why the right image looks a bit blurry?
 
-We can relate the poinrts since we used SIFT (scale-invariant feature transform) descriptors . These descriptors are invariant to scale and orientation of images and robust to illumination fluctuations, noise, partial occlusion, and minor viewpoint changes in the images <a href='#ref1'>[1]</a>.
+We can relate the points since we used SIFT (scale-invariant feature transform) descriptors . These descriptors are invariant to scale and orientation of images and robust to illumination fluctuations, noise, partial occlusion, and minor viewpoint changes in the images <a href='#ref1'>[1]</a>.
 
 The right image is blurry because it was warped to fit the left image.
 
