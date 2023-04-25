@@ -65,7 +65,7 @@ def gauss(size,sigma):
     return gauss1,gauss1_dx, gauss1_dy
 
 # Visualize the filters you created to make sure you are working with the correct filters
-gauss1, gauss1_dx, gauss1_dy = gauss(7,1)
+gauss1, gauss1_dx, gauss1_dy = gauss(21,3)
 plt.figure()
 plt.subplot(1,3,1)
 plt.imshow(gauss1)
@@ -77,8 +77,8 @@ plt.show()
 
 # visualize the filters in 3D
 from mpl_toolkits.mplot3d import Axes3D
-x = np.arange(0,7)
-y = np.arange(0,7)
+x = np.arange(0,21)
+y = np.arange(0,21)
 X, Y = np.meshgrid(x, y)
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
@@ -474,7 +474,7 @@ plt.plot(keypoints_2[:,1],keypoints_2[:,0],'ro',ms=3)
 
 
 
-    [<matplotlib.lines.Line2D at 0x1f7a1a576a0>]
+    [<matplotlib.lines.Line2D at 0x22b3b3347f0>]
 
 
 
@@ -501,9 +501,9 @@ def points_matching(kp1, descriptor1, kp2, descriptor2, threshold):
     # You could implement it as nested loop for simplicity.
 
     for i in range(descriptor1.shape[0]):
-        dist = np.linalg.norm(descriptor1[i] - descriptor2, axis=1)
-        if np.min(dist) < threshold:
-            matched_loca.append((kp1[i], kp2[np.argmin(dist)]))
+        distance = np.linalg.norm(descriptor1[i] - descriptor2, axis=1)
+        if np.min(distance) < threshold:
+            matched_loca.append((kp1[i], kp2[np.argmin(distance)]))
     
     return matched_loca
 
@@ -710,7 +710,6 @@ plt.show()
 (kp1, features1) = sift.compute(img1,kp1)
 (kp2, features2) = sift.compute(img2,kp2)
 
-
 kp1 = np.float32([kp.pt for kp in kp1])
 kp2 = np.float32([kp.pt for kp in kp2])
 
@@ -728,16 +727,17 @@ for m in rawMatches:
     ################################################ TODO ###############################################
     # Ensure the distance is within a certain ratio of each other (i.e. Lowe's ratio test)
     # Test the distance between points. use m[0].distance and m[1].distance
-    if len(m) == 2 and m[0].distance < m[1].distance * 0.8: 
+    if len(m) == 2 and m[0].distance < m[1].distance * 0.65: 
         matches.append((m[0].trainIdx, m[0].queryIdx))
 
 ptsA = np.float32([kp1[i] for (_,i) in matches])
 ptsB = np.float32([kp2[i] for (i,_) in matches])
 
+
 ################################################ TODO ###############################################
 ### Similar to what we did in part C
 ### Create an image img_match that shows the matching results by drawing lines between corresponding points. 
-img_match = drawMatches(img1, img2, kp1, kp2, matches, status=None)
+img_match = drawMatches(img1, img2, kp1, kp2, matches, status=)
 for p1, p2 in zip(ptsA, ptsB):
     cv2.line(img_match, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), (255, 255, 255), 1)
 plt.figure(figsize=(15,15))
@@ -747,32 +747,9 @@ plt.show()
 ```
 
 
-    ---------------------------------------------------------------------------
-
-    TypeError                                 Traceback (most recent call last)
-
-    Cell In[12], line 33
-         28 ptsB = np.float32([kp2[i] for (i,_) in matches])
-         30 ################################################ TODO ###############################################
-         31 ### Similar to what we did in part C
-         32 ### Create an image img_match that shows the matching results by drawing lines between corresponding points. 
-    ---> 33 img_match = drawMatches(img1, img2, kp1, kp2, matches, status=None)
-         34 for p1, p2 in zip(ptsA, ptsB):
-         35     cv2.line(img_match, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), (255, 255, 255), 1)
     
-
-    Cell In[11], line 10, in drawMatches(imageA, imageB, kpsA, kpsB, matches, status, lw)
-          7 vis[0:hB, wA:] = imageB
-          9 # loop over the matches
-    ---> 10 for ((trainIdx, queryIdx), s) in zip(matches, status):
-         11     # only process the match if the keypoint was successfully
-         12     # matched
-         13     if s == 1:
-         14         # draw the match
-         15         ptA = (int(kpsA[queryIdx][0]), int(kpsA[queryIdx][1]))
+![png](README_files/README_24_0.png)
     
-
-    TypeError: 'NoneType' object is not iterable
 
 
 
@@ -799,6 +776,28 @@ plt.figure(figsize=(20,40))
 plt.imshow(result,'gray')
 plt.title('Stitched image')
 ```
+
+
+    ---------------------------------------------------------------------------
+
+    error                                     Traceback (most recent call last)
+
+    Cell In[14], line 3
+          1 ################################################ TODO ###############################################
+          2 # Find homography with RANSAC
+    ----> 3 (H, status) = cv2.findHomography(...)
+          5 img_ransac = drawMatches(img1,img2,kp1,kp2,matches,status)
+          6 plt.figure(figsize=(15,15))
+    
+
+    error: OpenCV(4.6.0) :-1: error: (-5:Bad argument) in function 'findHomography'
+    > Overload resolution failed:
+    >  - findHomography() missing required argument 'dstPoints' (pos 2)
+    >  - findHomography() missing required argument 'dstPoints' (pos 2)
+    >  - findHomography() missing required argument 'dstPoints' (pos 2)
+    >  - findHomography() missing required argument 'dstPoints' (pos 2)
+    
+
 
 ### Please answer the following questions based on your observation:
 * For these 2 images, the matched features points are not necessary from the same depth (and therefore not on the same plane), why we could still relate them by a homography?
