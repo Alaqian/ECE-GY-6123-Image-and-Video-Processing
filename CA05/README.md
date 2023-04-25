@@ -219,6 +219,8 @@ plt.show()
     
 
 
+The features make sense since they are all the corners of the image. The corners are the points where the intensity changes in both directions. The Harris detector is able to detect these points.
+
 <a id='pb'></a>
 
 ## PART B - SIFT descriptor
@@ -291,7 +293,6 @@ def descriptor(theta16,mag16):
     desp = np.matrix(desp)
 
     return desp
-
 ```
 
 
@@ -379,61 +380,61 @@ for i in range(0,10):
 
 
     
-![png](README_files/README_13_0.png)
+![png](README_files/README_14_0.png)
     
 
 
 
     
-![png](README_files/README_13_1.png)
+![png](README_files/README_14_1.png)
     
 
 
 
     
-![png](README_files/README_13_2.png)
+![png](README_files/README_14_2.png)
     
 
 
 
     
-![png](README_files/README_13_3.png)
+![png](README_files/README_14_3.png)
     
 
 
 
     
-![png](README_files/README_13_4.png)
+![png](README_files/README_14_4.png)
     
 
 
 
     
-![png](README_files/README_13_5.png)
+![png](README_files/README_14_5.png)
     
 
 
 
     
-![png](README_files/README_13_6.png)
+![png](README_files/README_14_6.png)
     
 
 
 
     
-![png](README_files/README_13_7.png)
+![png](README_files/README_14_7.png)
     
 
 
 
     
-![png](README_files/README_13_8.png)
+![png](README_files/README_14_8.png)
     
 
 
 
     
-![png](README_files/README_13_9.png)
+![png](README_files/README_14_9.png)
     
 
 
@@ -476,19 +477,19 @@ plt.plot(keypoints_2[:,1],keypoints_2[:,0],'ro',ms=3)
 
 
 
-    [<matplotlib.lines.Line2D at 0x24927841430>]
+    [<matplotlib.lines.Line2D at 0x18a682a31c0>]
 
 
 
 
     
-![png](README_files/README_18_1.png)
+![png](README_files/README_19_1.png)
     
 
 
 
     
-![png](README_files/README_18_2.png)
+![png](README_files/README_19_2.png)
     
 
 
@@ -536,7 +537,7 @@ for r in [0.95, 0.8, 0.775, 0.75, 0.725, 0.7, 0.675, 0.65, 0.5]:
 
 
     
-![png](README_files/README_19_1.png)
+![png](README_files/README_20_1.png)
     
 
 
@@ -546,7 +547,7 @@ for r in [0.95, 0.8, 0.775, 0.75, 0.725, 0.7, 0.675, 0.65, 0.5]:
 
 
     
-![png](README_files/README_19_3.png)
+![png](README_files/README_20_3.png)
     
 
 
@@ -556,7 +557,7 @@ for r in [0.95, 0.8, 0.775, 0.75, 0.725, 0.7, 0.675, 0.65, 0.5]:
 
 
     
-![png](README_files/README_19_5.png)
+![png](README_files/README_20_5.png)
     
 
 
@@ -566,7 +567,7 @@ for r in [0.95, 0.8, 0.775, 0.75, 0.725, 0.7, 0.675, 0.65, 0.5]:
 
 
     
-![png](README_files/README_19_7.png)
+![png](README_files/README_20_7.png)
     
 
 
@@ -576,7 +577,7 @@ for r in [0.95, 0.8, 0.775, 0.75, 0.725, 0.7, 0.675, 0.65, 0.5]:
 
 
     
-![png](README_files/README_19_9.png)
+![png](README_files/README_20_9.png)
     
 
 
@@ -586,7 +587,7 @@ for r in [0.95, 0.8, 0.775, 0.75, 0.725, 0.7, 0.675, 0.65, 0.5]:
 
 
     
-![png](README_files/README_19_11.png)
+![png](README_files/README_20_11.png)
     
 
 
@@ -596,7 +597,7 @@ for r in [0.95, 0.8, 0.775, 0.75, 0.725, 0.7, 0.675, 0.65, 0.5]:
 
 
     
-![png](README_files/README_19_13.png)
+![png](README_files/README_20_13.png)
     
 
 
@@ -606,7 +607,7 @@ for r in [0.95, 0.8, 0.775, 0.75, 0.725, 0.7, 0.675, 0.65, 0.5]:
 
 
     
-![png](README_files/README_19_15.png)
+![png](README_files/README_20_15.png)
     
 
 
@@ -616,9 +617,11 @@ for r in [0.95, 0.8, 0.775, 0.75, 0.725, 0.7, 0.675, 0.65, 0.5]:
 
 
     
-![png](README_files/README_19_17.png)
+![png](README_files/README_20_17.png)
     
 
+
+The points look reasonable. The lines are drawn between the matching points.
 
 <a id='pd'></a>
 
@@ -701,7 +704,7 @@ plt.show()
 
 
     
-![png](README_files/README_23_0.png)
+![png](README_files/README_25_0.png)
     
 
 
@@ -749,7 +752,7 @@ plt.show()
 
 
     
-![png](README_files/README_24_0.png)
+![png](README_files/README_26_0.png)
     
 
 
@@ -780,7 +783,7 @@ plt.title('Stitched image')
 
 
     
-![png](README_files/README_25_0.png)
+![png](README_files/README_27_0.png)
     
 
 
@@ -793,7 +796,7 @@ plt.title('Stitched image')
 
 
     
-![png](README_files/README_25_2.png)
+![png](README_files/README_27_2.png)
     
 
 
