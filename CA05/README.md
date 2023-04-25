@@ -19,6 +19,7 @@ import scipy.ndimage as ndimage
 ```
 
 <a id='pa'></a>
+
 ## PART A - Harris detector
 
 - Write your own program for Harris corner point detection at a fixed scale. Your program should contain the following steps:
@@ -87,13 +88,13 @@ plt.show()
 
 
     
-![png](README_files/README_4_0.png)
+![png](README_files/README_5_0.png)
     
 
 
 
     
-![png](README_files/README_4_1.png)
+![png](README_files/README_5_1.png)
     
 
 
@@ -212,11 +213,12 @@ plt.show()
 
 
     
-![png](README_files/README_6_0.png)
+![png](README_files/README_7_0.png)
     
 
 
 <a id='pb'></a>
+
 ## PART B - SIFT descriptor
 
 Write a program that can generate SIFT descriptor for each detected feature point using your program in Prob. 1. You may follow the following steps:
@@ -375,65 +377,66 @@ for i in range(0,10):
 
 
     
-![png](README_files/README_11_0.png)
+![png](README_files/README_13_0.png)
     
 
 
 
     
-![png](README_files/README_11_1.png)
+![png](README_files/README_13_1.png)
     
 
 
 
     
-![png](README_files/README_11_2.png)
+![png](README_files/README_13_2.png)
     
 
 
 
     
-![png](README_files/README_11_3.png)
+![png](README_files/README_13_3.png)
     
 
 
 
     
-![png](README_files/README_11_4.png)
+![png](README_files/README_13_4.png)
     
 
 
 
     
-![png](README_files/README_11_5.png)
+![png](README_files/README_13_5.png)
     
 
 
 
     
-![png](README_files/README_11_6.png)
+![png](README_files/README_13_6.png)
     
 
 
 
     
-![png](README_files/README_11_7.png)
+![png](README_files/README_13_7.png)
     
 
 
 
     
-![png](README_files/README_11_8.png)
+![png](README_files/README_13_8.png)
     
 
 
 
     
-![png](README_files/README_11_9.png)
+![png](README_files/README_13_9.png)
     
 
 
 <a id='pc'></a>
+
 ## PART C - correspondance in 2 images
 
 Finding corresponding points in two images based on SIFT descriptors.
@@ -502,6 +505,7 @@ for r in [0.95, 0.8, 0.65, 0.5]:
 ```
 
 <a id='pd'></a>
+
 ## PART D - panorama stiching
 
 Stitch two images into a panorama using SIFT feature detector and descriptor.
