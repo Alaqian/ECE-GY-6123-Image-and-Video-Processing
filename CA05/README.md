@@ -474,7 +474,7 @@ plt.plot(keypoints_2[:,1],keypoints_2[:,0],'ro',ms=3)
 
 
 
-    [<matplotlib.lines.Line2D at 0x22b3b3347f0>]
+    [<matplotlib.lines.Line2D at 0x21f32154ee0>]
 
 
 
@@ -747,8 +747,10 @@ plt.show()
 ```
 
 
-    
-![png](README_files/README_24_0.png)
+      Cell In[12], line 33
+        img_match = drawMatches(img1, img2, kp1, kp2, matches, status=)
+                                                                      ^
+    SyntaxError: invalid syntax
     
 
 
