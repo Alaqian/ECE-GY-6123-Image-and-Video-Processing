@@ -474,7 +474,7 @@ plt.plot(keypoints_2[:,1],keypoints_2[:,0],'ro',ms=3)
 
 
 
-    [<matplotlib.lines.Line2D at 0x29758b50bb0>]
+    [<matplotlib.lines.Line2D at 0x1f7a1a576a0>]
 
 
 
@@ -680,28 +680,35 @@ sift = cv2.SIFT_create()
 
 ################################################ TODO ###############################################
 # Use sift.detect to detect features in the images
-kp1 = ...
-kp2 = ...
+kp1 = sift.detect(img1,None)
+kp2 = sift.detect(img2,None)
 
 # Visualize the keypoints
 img1_kps = cv2.drawKeypoints(img1,kp1,None,flags = cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-img2_kps = ...
+img2_kps = cv2.drawKeypoints(img2,kp2,None,flags = cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
 plt.figure(figsize=(15,15))
 plt.subplot(121)
 plt.imshow(img1_kps)
+plt.title('image 1 with keypoints')
 plt.subplot(122)
 plt.imshow(img2_kps)
-plt.title('images with keypoints')
+plt.title('image 2 with keypoints')
 plt.show()
 ```
+
+
+    
+![png](README_files/README_23_0.png)
+    
+
 
 
 ```python
 ################################################ TODO ###############################################
 # Use sift.compute to generate sift descriptors/features
 (kp1, features1) = sift.compute(img1,kp1)
-(kp2, features2) = ...
+(kp2, features2) = sift.compute(img2,kp2)
 
 
 kp1 = np.float32([kp.pt for kp in kp1])
@@ -712,7 +719,7 @@ matcher = cv2.DescriptorMatcher_create("BruteForce")
 # Use knnMatch function in matcher to find corresonding features
 # For robustness of the matching results, we'd like to find 2 best matches (i.e. k=2 for knnMatch) 
 # and return their matching distances 
-rawMatches = matcher.knnMatch(...)
+rawMatches = matcher.knnMatch(features1, features2, 2)
 matches = []
 
 # Now we validate if the matching is reliable by checking if the best maching distance is less than 
@@ -721,7 +728,7 @@ for m in rawMatches:
     ################################################ TODO ###############################################
     # Ensure the distance is within a certain ratio of each other (i.e. Lowe's ratio test)
     # Test the distance between points. use m[0].distance and m[1].distance
-    if len(m) == 2 and ... : 
+    if len(m) == 2 and m[0].distance < m[1].distance * 0.8: 
         matches.append((m[0].trainIdx, m[0].queryIdx))
 
 ptsA = np.float32([kp1[i] for (_,i) in matches])
@@ -730,15 +737,43 @@ ptsB = np.float32([kp2[i] for (i,_) in matches])
 ################################################ TODO ###############################################
 ### Similar to what we did in part C
 ### Create an image img_match that shows the matching results by drawing lines between corresponding points. 
-img_match = ...
+img_match = drawMatches(img1, img2, kp1, kp2, matches, status=None)
 for p1, p2 in zip(ptsA, ptsB):
-    cv2.line(...)
+    cv2.line(img_match, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), (255, 255, 255), 1)
 plt.figure(figsize=(15,15))
 plt.imshow(img_match,'gray')
 plt.title('Matching points (Before RANSAC)')
 plt.show()
-
 ```
+
+
+    ---------------------------------------------------------------------------
+
+    TypeError                                 Traceback (most recent call last)
+
+    Cell In[12], line 33
+         28 ptsB = np.float32([kp2[i] for (i,_) in matches])
+         30 ################################################ TODO ###############################################
+         31 ### Similar to what we did in part C
+         32 ### Create an image img_match that shows the matching results by drawing lines between corresponding points. 
+    ---> 33 img_match = drawMatches(img1, img2, kp1, kp2, matches, status=None)
+         34 for p1, p2 in zip(ptsA, ptsB):
+         35     cv2.line(img_match, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), (255, 255, 255), 1)
+    
+
+    Cell In[11], line 10, in drawMatches(imageA, imageB, kpsA, kpsB, matches, status, lw)
+          7 vis[0:hB, wA:] = imageB
+          9 # loop over the matches
+    ---> 10 for ((trainIdx, queryIdx), s) in zip(matches, status):
+         11     # only process the match if the keypoint was successfully
+         12     # matched
+         13     if s == 1:
+         14         # draw the match
+         15         ptA = (int(kpsA[queryIdx][0]), int(kpsA[queryIdx][1]))
+    
+
+    TypeError: 'NoneType' object is not iterable
+
 
 
 ```python
