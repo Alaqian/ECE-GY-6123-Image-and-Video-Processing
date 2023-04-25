@@ -477,7 +477,7 @@ plt.plot(keypoints_2[:,1],keypoints_2[:,0],'ro',ms=3)
 
 
 
-    [<matplotlib.lines.Line2D at 0x18a682a31c0>]
+    [<matplotlib.lines.Line2D at 0x21342d78040>]
 
 
 
@@ -621,7 +621,7 @@ for r in [0.95, 0.8, 0.775, 0.75, 0.725, 0.7, 0.675, 0.65, 0.5]:
     
 
 
-The points look reasonable. The lines are drawn between the matching points.
+The points look reasonable at lower values of the threshold, around 0.75. The lines are drawn between the matching points.
 
 <a id='pd'></a>
 
@@ -732,7 +732,7 @@ for m in rawMatches:
     ################################################ TODO ###############################################
     # Ensure the distance is within a certain ratio of each other (i.e. Lowe's ratio test)
     # Test the distance between points. use m[0].distance and m[1].distance
-    if len(m) == 2 and m[0].distance < m[1].distance * 0.725: 
+    if len(m) == 2 and m[0].distance < m[1].distance * 0.75: 
         matches.append((m[0].trainIdx, m[0].queryIdx))
 
 ptsA = np.float32([kp1[i] for (_,i) in matches])
@@ -850,7 +850,7 @@ interact(visualize_match, x=widgets.IntSlider(min=0, max=len(matched_idx)-1, ste
 ```
 
 
-    interactive(children=(IntSlider(value=100, description='x', max=302), Output()), _dom_classes=('widget-interac…
+    interactive(children=(IntSlider(value=100, description='x', max=308), Output()), _dom_classes=('widget-interac…
 
 
 ## References
