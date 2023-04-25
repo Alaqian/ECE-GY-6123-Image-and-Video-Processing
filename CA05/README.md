@@ -458,8 +458,6 @@ img2 = cv2.imread('right.jpg',0).astype('float') # read right image
 img_2 = cv2.normalize(img2, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
 
 descriptor_2, keypoints_2 = part_B(img_2)
-
-
 ```
 
 
@@ -474,6 +472,25 @@ plt.plot(keypoints_2[:,1],keypoints_2[:,0],'ro',ms=3)
 ```
 
 
+
+
+    [<matplotlib.lines.Line2D at 0x29758b50bb0>]
+
+
+
+
+    
+![png](README_files/README_18_1.png)
+    
+
+
+
+    
+![png](README_files/README_18_2.png)
+    
+
+
+
 ```python
 # write function to find corresponding points in image
 def points_matching(kp1, descriptor1, kp2, descriptor2, threshold):
@@ -481,13 +498,18 @@ def points_matching(kp1, descriptor1, kp2, descriptor2, threshold):
     ################################################ TODO ###############################################
     # Find matching points between img1 and img2 using the algorithm described in the above
     # For distance measuring, you may use np.linalg.norm()
-    # You could implement it as nested loop for simplicity. 
+    # You could implement it as nested loop for simplicity.
+
+    for i in range(descriptor1.shape[0]):
+        dist = np.linalg.norm(descriptor1[i] - descriptor2, axis=1)
+        if np.min(dist) < threshold:
+            matched_loca.append((kp1[i], kp2[np.argmin(dist)]))
     
     return matched_loca
 
 
 # Test different thresholds for the matching
-for r in [0.95, 0.8, 0.65, 0.5]: 
+for r in [0.95, 0.8, 0.775, 0.75, 0.725, 0.7, 0.675, 0.65, 0.5]: 
     matched_loca = points_matching(keypoints_1, descriptor_1, keypoints_2, descriptor_2, r)
     final_image = np.concatenate((img_1,img_2),axis=1)
     print('threshold: ', r)
@@ -497,12 +519,104 @@ for r in [0.95, 0.8, 0.65, 0.5]:
     # Use cv2.line() to draw the line on final_image
     # Remember the x,y coordinate in numpy and OpenCV is opposite and you need to add image width for pt2
     for pt in matched_loca:
-        ...
+        pt1 = (int(pt[0][1]), int(pt[0][0]))
+        pt2 = (int(pt[1][1] + img_1.shape[1]), int(pt[1][0]))
+        cv2.line(final_image, pt1, pt2, (255, 255, 255), 1)
         
     plt.figure(figsize=(15,15))
     plt.imshow(final_image,cmap='gray')
     plt.show()
 ```
+
+    threshold:  0.95
+    number of corresponding poitnts found: 85
+    
+
+
+    
+![png](README_files/README_19_1.png)
+    
+
+
+    threshold:  0.8
+    number of corresponding poitnts found: 43
+    
+
+
+    
+![png](README_files/README_19_3.png)
+    
+
+
+    threshold:  0.775
+    number of corresponding poitnts found: 38
+    
+
+
+    
+![png](README_files/README_19_5.png)
+    
+
+
+    threshold:  0.75
+    number of corresponding poitnts found: 34
+    
+
+
+    
+![png](README_files/README_19_7.png)
+    
+
+
+    threshold:  0.725
+    number of corresponding poitnts found: 32
+    
+
+
+    
+![png](README_files/README_19_9.png)
+    
+
+
+    threshold:  0.7
+    number of corresponding poitnts found: 30
+    
+
+
+    
+![png](README_files/README_19_11.png)
+    
+
+
+    threshold:  0.675
+    number of corresponding poitnts found: 28
+    
+
+
+    
+![png](README_files/README_19_13.png)
+    
+
+
+    threshold:  0.65
+    number of corresponding poitnts found: 26
+    
+
+
+    
+![png](README_files/README_19_15.png)
+    
+
+
+    threshold:  0.5
+    number of corresponding poitnts found: 9
+    
+
+
+    
+![png](README_files/README_19_17.png)
+    
+
 
 <a id='pd'></a>
 
