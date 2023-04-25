@@ -7,6 +7,8 @@
 - <a href='#pb'>PART B - SIFT Detector</a>
 - <a href='#pc'>PART C - Feature Matching</a>
 - <a href='#pd'>PART D - Panorama Stiching</a>
+- [Interactive Correspondence Visualization](#Interactive-Correspondence-Visualization)
+- [References](#References)
 
 
 ```python
@@ -474,7 +476,7 @@ plt.plot(keypoints_2[:,1],keypoints_2[:,0],'ro',ms=3)
 
 
 
-    [<matplotlib.lines.Line2D at 0x1ee68a19100>]
+    [<matplotlib.lines.Line2D at 0x23e93016d30>]
 
 
 
@@ -727,7 +729,7 @@ for m in rawMatches:
     ################################################ TODO ###############################################
     # Ensure the distance is within a certain ratio of each other (i.e. Lowe's ratio test)
     # Test the distance between points. use m[0].distance and m[1].distance
-    if len(m) == 2 and m[0].distance < m[1].distance * 0.65: 
+    if len(m) == 2 and m[0].distance < m[1].distance * 0.725: 
         matches.append((m[0].trainIdx, m[0].queryIdx))
 
 ptsA = np.float32([kp1[i] for (_,i) in matches])
@@ -755,7 +757,7 @@ plt.show()
 ```python
 ################################################ TODO ###############################################
 # Find homography with RANSAC
-(H, status) = cv2.findHomography(...)
+(H, status) = cv2.findHomography(ptsB, ptsA, cv2.RANSAC, 5.0)
 
 img_ransac = drawMatches(img1,img2,kp1,kp2,matches,status)
 plt.figure(figsize=(15,15))
@@ -767,20 +769,41 @@ plt.show()
 # fill in the arguments to warp the second image to fit the first image.
 # For the size of the resulting image, you can set the height to be the same as the original, width to be twice the original.
 # First transform the right image, then fill in the left part with the orignal left image
-result = cv2.warpPerspective(...)
+result = cv2.warpPerspective(img2, H, (img1.shape[1] + img2.shape[1], img1.shape[0]), flags=cv2.INTER_LINEAR)
 # For blending, you could just overlay img1 to the corresponding positions on warped img2
-result[...] = img1
+result[0:img1.shape[0], 0:img1.shape[1]] = img1
 
 plt.figure(figsize=(20,40))
 plt.imshow(result,'gray')
 plt.title('Stitched image')
 ```
 
+
+    
+![png](README_files/README_25_0.png)
+    
+
+
+
+
+
+    Text(0.5, 1.0, 'Stitched image')
+
+
+
+
+    
+![png](README_files/README_25_2.png)
+    
+
+
 ### Please answer the following questions based on your observation:
 * For these 2 images, the matched features points are not necessary from the same depth (and therefore not on the same plane), why we could still relate them by a homography?
 * Why the right image looks a bit blurry?
 
+We can relate the poinrts since we used SIFT (scale-invariant feature transform) descriptors . These descriptors are invariant to scale and orientation of images and robust to illumination fluctuations, noise, partial occlusion, and minor viewpoint changes in the images <a href='#ref1'>[1]</a>.
 
+The right image is blurry because it was warped to fit the left image.
 
 ## Interactive Correspondence Visualization
 * Just for interactive visualization, not in assignments
@@ -822,3 +845,11 @@ def visualize_match(x):
 ```python
 interact(visualize_match, x=widgets.IntSlider(min=0, max=len(matched_idx)-1, step=1, value=100));
 ```
+
+
+    interactive(children=(IntSlider(value=100, description='x', max=302), Output()), _dom_classes=('widget-interac…
+
+
+## References
+
+<a id='ref1'></a>1. https://www.sciencedirect.com/topics/computer-science/scale-invariant-feature-transform
