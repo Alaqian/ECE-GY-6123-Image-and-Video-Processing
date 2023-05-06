@@ -118,7 +118,7 @@ class PennFudanDataset(Dataset):
         return image, mask
 ```
 
-    C:\Users\Alqia\AppData\Local\Temp\ipykernel_24588\1373736281.py:6: DeprecationWarning: Sampling from a set deprecated
+    C:\Users\Alqia\AppData\Local\Temp\ipykernel_12420\1373736281.py:6: DeprecationWarning: Sampling from a set deprecated
     since Python 3.9 and will be removed in a subsequent version.
       val_indices = random.sample(set(indices)-set(train_indices), k=int(len(indices)*0.1))
     
@@ -333,7 +333,6 @@ batchsize=8
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 checkpoint_dir = "./checkpoints"
 checkpoint_path = os.path.join(checkpoint_dir, "checkpoint.pth")
-!del "checkpoints\checkpoint.pth"
 criterion = SoftDiceLoss()#nn.BCELoss()#
 model = UNET().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -341,7 +340,7 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=20, v
 
 train_losses = []
 val_losses = []
-val_loader = DataLoader(test_dataset, batch_size=batchsize, shuffle=False)
+val_loader = DataLoader(val_dataset, batch_size=batchsize, shuffle=False)
 train_loader = DataLoader(augmented_train_dataset, batch_size=batchsize, shuffle=True)
 ```
 
@@ -828,96 +827,37 @@ while optimizer.param_groups[0]['lr'] > 1e-7 and val_loss > 0.1:
 
 
 ```python
-test_loader = DataLoader(test_dataset, batch_size=batchsize, shuffle=False)
-
-# Use the model on the test set and visualize the results
-model.eval()
-with torch.no_grad():
-    image, mask, _ = next(iter(test_loader))
-    image = image.to(device)
-    mask = mask.to(device)
-    pred = torch.round(model(image))
-    pred = pred.cpu().numpy()
-    mask = mask.cpu().numpy()
-    image = image.cpu().numpy()
-    pred = np.squeeze(pred, axis=1)
-    fig, ax = plt.subplots(1, 3, figsize=(15, 15))
-    ax[0].imshow(image[3].transpose(1, 2,0))
-    ax[0].set_title("Image")
-    ax[1].imshow(mask[3].squeeze(), cmap="gray")
-    ax[1].set_title("Mask")
-    ax[2].imshow(pred[3].squeeze(), cmap="gray")
-    ax[2].set_title("Prediction")
-    plt.show()
-    
-
-    for image in os.listdir("./out_of_distribution_images"):
-        image = cv2.imread(os.path.join("./out_of_distribution_images", image))
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image, shape = square_pad(image)
-        image = cv2.resize(image, (image_size, image_size))
-        image = image.transpose(2, 0, 1)
-        image = image / 255
-        image = torch.from_numpy(image).float()
-        image = image.to(device)
-        pred = model(image[None, ...])
-        pred = torch.round(pred)
-        pred = pred.cpu().numpy()
-        pred = np.squeeze(pred, axis=1)
-        plt.subplot(1, 2, 1)
-        plt.imshow(image.cpu().numpy().transpose(1, 2, 0))
-        plt.subplot(1, 2, 2)
-        plt.imshow(pred[0], cmap="gray")
-        plt.show()
-```
-
-
-    
-![png](README_files/README_22_0.png)
-    
-
-
-
-    
-![png](README_files/README_22_1.png)
-    
-
-
-
-    
-![png](README_files/README_22_2.png)
-    
-
-
-
-    
-![png](README_files/README_22_3.png)
-    
-
-
-
-```python
 model, optimizer, epoch, val_loss = load_checkpoint(checkpoint_path, model, optimizer)
+test_loader = DataLoader(test_dataset, batch_size=3, shuffle=False)
 # Use the model on the test set and visualize the results
 model.eval()
 with torch.no_grad():
-    image, mask, _ = next(iter(test_loader))
+    image, mask, shape = next(iter(test_loader))
     image = image.to(device)
     mask = mask.to(device)
     pred = torch.round(model(image))
+    image = image.cpu().numpy()
     pred = pred.cpu().numpy()
     mask = mask.cpu().numpy()
-    image = image.cpu().numpy()
+    image = image.transpose(0, 2, 3, 1)
     pred = np.squeeze(pred, axis=1)
-    fig, ax = plt.subplots(1, 4, figsize=(15, 15))
-    ax[0].imshow(image[3].transpose(1, 2,0))
-    ax[0].set_title("Image")
-    ax[1].imshow(mask[3].squeeze(), cmap="gray")
-    ax[1].set_title("Mask")
-    ax[2].imshow(pred[3].squeeze(), cmap="gray")
-    ax[2].set_title("Prediction")
-    ax[3].imshow(image[3].transpose(1, 2,0)*pred[3][:,:,None])
-    plt.show()
+    mask = np.squeeze(mask, axis=1)
+    for i in range(3):
+        fig, ax = plt.subplots(1, 4, figsize=(15, 15))
+        shape_i = (int(shape[0][i]),int(shape[1][i]))
+        image_i = remove_pad(image[i], shape_i)
+        pred_i = remove_pad(pred[i], shape_i)
+        mask_i = remove_pad(mask[i], shape_i)
+        ax[0].imshow(image_i)
+        ax[0].set_title("Image")
+        ax[1].imshow(mask_i)
+        ax[1].set_title("Mask")
+        ax[2].imshow(pred_i)
+        ax[2].set_title("Prediction")
+        ax[3].imshow(image_i)
+        ax[3].imshow(pred_i, alpha=0.5)
+        ax[3].set_title("Overlay")
+        plt.show()
     
 
     for image in os.listdir("./out_of_distribution_images"):
@@ -941,11 +881,11 @@ with torch.no_grad():
         plt.subplot(1, 3, 1)
         plt.imshow(image)
         plt.subplot(1, 3, 2)
-        plt.imshow(pred, cmap="gray")
+        plt.imshow(pred)
         plt.subplot(1, 3, 3)
-        plt.imshow(image*pred[:,:,None])
+        plt.imshow(image)
+        plt.imshow(pred, alpha=0.5)
         plt.show()
-
 ```
 
     Checkpoint loaded:	Epoch: 187	Validation Loss: 0.1421	Learning Rate: 1.000e-04
@@ -953,25 +893,37 @@ with torch.no_grad():
 
 
     
-![png](README_files/README_23_1.png)
+![png](README_files/README_22_1.png)
     
 
 
 
     
-![png](README_files/README_23_2.png)
+![png](README_files/README_22_2.png)
     
 
 
 
     
-![png](README_files/README_23_3.png)
+![png](README_files/README_22_3.png)
     
 
 
 
     
-![png](README_files/README_23_4.png)
+![png](README_files/README_22_4.png)
+    
+
+
+
+    
+![png](README_files/README_22_5.png)
+    
+
+
+
+    
+![png](README_files/README_22_6.png)
     
 
 
