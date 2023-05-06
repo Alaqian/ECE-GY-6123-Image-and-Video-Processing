@@ -9,6 +9,8 @@ conda install matplotlib
 pip install opencv-python 
 python -m pip install jupyter
 pip install jupyterlab
+pip install nb_conda_kernels
+pip install nbconvert
 conda deactivate
 
 conda create --name torch python=3.9
@@ -22,5 +24,6 @@ exit()
 conda install matplotlib
 pip install opencv-python 
 python -m pip install jupyter
-pip install jupyterlab
+pip install nb_conda_kernels
+pip install nbconvert
 conda deactivate
