@@ -3,10 +3,17 @@
 
 ## Table of Contents
 - <a href='#p1a'>Part (a)</a>
+    - [Dataset Split](#Dataset-Split)
+    - [PennFudanDataset Class](#PennFudanDataset-Class)
 - <a href='#p1b'>Part (b)</a>
 - <a href='#p1c'>Part (c)</a>
     - [Architecture](#Architecture)
     - [Loss Function](#Loss-Function)
+    - [Training and Evaluation Functions](#Training-and-Evaluation-Functions)
+    - [Functions for Saving and Loading Checkpoint](#Functions-for-Saving-and-Loading-Checkpoint)
+    - [Training Hyperparameters](#Training-Hyperparameters)
+    - [Training for 100 Epochs at 0.001 Learning Rate](#Training-for-100-Epochs-at-0.001-Learning-Rate)
+    - [Training with a Learning Rate Scheduler](#Training-with-a-Learning-Rate-Scheduler)
 - <a href='#p1d'>Part (d)</a>
 - <a href='#p2a'>Part (e)</a>
 - <a href='#p2b'>Part (f)</a>
@@ -45,6 +52,8 @@ except:
 
 [Table of Contents](#Table-of-Contents)
 
+##### Dataset Split
+
 
 ```python
 image_paths = sorted([os.path.join(path, "PNGImages", image) for image in os.listdir(os.path.join(path, "PNGImages"))])
@@ -61,7 +70,19 @@ val_image_paths = [image_paths[i] for i in val_indices]
 val_mask_paths = [mask_paths[i] for i in val_indices]
 test_image_paths = [image_paths[i] for i in test_indices]
 test_mask_paths = [mask_paths[i] for i in test_indices]
+```
 
+    C:\Users\Alqia\AppData\Local\Temp\ipykernel_28592\2302059204.py:6: DeprecationWarning: Sampling from a set deprecated
+    since Python 3.9 and will be removed in a subsequent version.
+      val_indices = random.sample(set(indices)-set(train_indices), k=int(len(indices)*0.1))
+    
+
+##### PennFudanDataset Class
+
+[Table of Contents](#Table-of-Contents)
+
+
+```python
 def square_pad(image):
     h_diff = max(image.shape) - image.shape[0]
     w_diff = max(image.shape) - image.shape[1]
@@ -118,11 +139,6 @@ class PennFudanDataset(Dataset):
         return image, mask
 ```
 
-    C:\Users\Alqia\AppData\Local\Temp\ipykernel_12420\1373736281.py:6: DeprecationWarning: Sampling from a set deprecated
-    since Python 3.9 and will be removed in a subsequent version.
-      val_indices = random.sample(set(indices)-set(train_indices), k=int(len(indices)*0.1))
-    
-
 <a id='p1b'></a>
 ##### (b) Apply data augmentation to your dataset during training and show an example of your data augmentation in your report.
 
@@ -158,9 +174,7 @@ ax[1,1].imshow(mask.squeeze(),cmap="gray")
 ax[1,1].set_title("Augmented Mask")
 ax[1,2].imshow(image.permute(1, 2, 0))
 ax[1,2].imshow(mask.squeeze(), alpha=0.5)
-ax[1,2].set_title("Original Mask Overlayed on Image")
-
-batchsize = 8
+ax[1,2].set_title("Original Mask Overlayed on Augmented Image")
 
 test_dataset = PennFudanDataset(test_image_paths, test_mask_paths, image_size=image_size)
 
@@ -173,7 +187,7 @@ val_dataset = PennFudanDataset(val_image_paths, val_mask_paths, image_size=image
 
 
     
-![png](README_files/README_6_1.png)
+![png](README_files/README_9_1.png)
     
 
 
@@ -182,7 +196,7 @@ val_dataset = PennFudanDataset(val_image_paths, val_mask_paths, image_size=image
 
 [Table of Contents](#Table-of-Contents)
 
-#### Architecture
+##### Architecture
 
 `x` (input) → `Conv_BN_ReLU1` → `Downsample1` → `x1` → `x2` → `Conv_BN_ReLU2` → `x3` → `Downsample2` → `x4` → `Conv_BN_ReLU3` → `x5` → `Upsample1` → `x6` → `cat(x3)` → `x7` → `Conv_BN_ReLU4` → `x8` → `Upsamle2` → `x9` → `cat(x1)` → `x10` → `Conv_BN_ReLU5` → `x11` → `conv6` → `x12` → `sigmoid` → `x13` (output)
 
@@ -231,28 +245,31 @@ class UNET(nn.Module):
         return x13
 ```
 
-#### Loss Function
+##### Loss Function
 
 [Table of Contents](#Table-of-Contents)
 
 
 ```python
 def dice_coefficient(output, ground_truth):
-    numerical_stability = 1.
     output = output.view(-1)
     ground_truth = ground_truth.view(-1)
     intersection = (output * ground_truth).sum()
-    return (2. * intersection + numerical_stability) / (output.sum() + ground_truth.sum() + numerical_stability)
+    return (2. * intersection) / (output.sum() + ground_truth.sum())
 
 class SoftDiceLoss(nn.Module):
     def __init__(self):
         super(SoftDiceLoss, self).__init__()
     
     def forward(self, output, ground_truth):
-        return 1 - dice_coefficient(output, ground_truth)
+        numerical_stability = 1.
+        output = output.view(-1)
+        ground_truth = ground_truth.view(-1)
+        intersection = (output * ground_truth).sum()
+        return 1 - (2. * intersection + numerical_stability) / (output.sum() + ground_truth.sum() + numerical_stability)
 ```
 
-#### Training and Evaluation Functions
+##### Training and Evaluation Functions
 
 [Table of Contents](#Table-of-Contents)
 
@@ -282,10 +299,11 @@ def evaluate(model, val_loader, criterion, device):
             pred = torch.round(model(image))
             loss = criterion(pred, mask)
             val_loss += loss.item()
-    return val_loss / len(val_loader)
+            dice = dice_coefficient(pred, mask)
+    return val_loss / len(val_loader), dice
 ```
 
-#### Saving and Loading Checkpoint Functions
+##### Functions for Saving and Loading Checkpoint
 
 [Table of Contents](#Table-of-Contents)
 
@@ -320,7 +338,7 @@ def load_checkpoint(filename, model, optimizer):
     return model, optimizer, epoch, loss
 ```
 
-#### Training Hyperparameters
+##### Training Hyperparameters
 
 [Table of Contents](#Table-of-Contents)
 
@@ -340,11 +358,12 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=20, v
 
 train_losses = []
 val_losses = []
+dice_coeffs = []
 val_loader = DataLoader(val_dataset, batch_size=batchsize, shuffle=False)
 train_loader = DataLoader(augmented_train_dataset, batch_size=batchsize, shuffle=True)
 ```
 
-#### Training for 100 Epochs at 0.001 Learning Rate
+##### Training for 100 Epochs at 0.001 Learning Rate
 
 [Table of Contents](#Table-of-Contents)
 
@@ -368,9 +387,10 @@ while epoch < NUM_EPOCHS:
         ncols=85,
         unit=" batches")
     train_loss = train(model, progress_bar, optimizer, criterion, device)
-    val_loss = evaluate(model, val_loader, criterion, device)
+    val_loss, dice = evaluate(model, val_loader, criterion, device)
     train_losses.append(train_loss)
     val_losses.append(val_loss)
+    dice_coeffs.append(dice)
     if val_loss == np.min(val_losses):
         save_checkpoint(checkpoint_path, model, optimizer, epoch, val_loss)
         count = 0
@@ -385,254 +405,269 @@ while epoch < NUM_EPOCHS:
             count = 0
 ```
 
-    Epoch 1: 100%|█████████████████████████████████| 17/17 [00:07<00:00,  2.35 batches/s]
+    Epoch 1: 100%|█████████████████████████████████| 17/17 [00:14<00:00,  1.21 batches/s]
     
 
-    Checkpoint saved:	Epoch: 1	Validation Loss: 0.7798	Learning Rate: 1.000e-03
+    Checkpoint saved:	Epoch: 1	Validation Loss: 1.0000	Learning Rate: 1.000e-03
     
 
-    Epoch 2: 100%|█████████████████████████████████| 17/17 [00:03<00:00,  4.27 batches/s]
+    Epoch 2: 100%|█████████████████████████████████| 17/17 [00:07<00:00,  2.13 batches/s]
     
 
-    Checkpoint saved:	Epoch: 2	Validation Loss: 0.7067	Learning Rate: 1.000e-03
+    Checkpoint saved:	Epoch: 2	Validation Loss: 0.6969	Learning Rate: 1.000e-03
     
 
-    Epoch 3: 100%|█████████████████████████████████| 17/17 [00:03<00:00,  4.47 batches/s]
+    Epoch 3: 100%|█████████████████████████████████| 17/17 [00:08<00:00,  2.09 batches/s]
     
 
-    Checkpoint saved:	Epoch: 3	Validation Loss: 0.7002	Learning Rate: 1.000e-03
+    Checkpoint saved:	Epoch: 3	Validation Loss: 0.4629	Learning Rate: 1.000e-03
     
 
-    Epoch 4: 100%|█████████████████████████████████| 17/17 [00:03<00:00,  4.28 batches/s]
+    Epoch 4: 100%|█████████████████████████████████| 17/17 [00:07<00:00,  2.15 batches/s]
+    Epoch 5: 100%|█████████████████████████████████| 17/17 [00:07<00:00,  2.15 batches/s]
+    Epoch 6: 100%|█████████████████████████████████| 17/17 [00:06<00:00,  2.45 batches/s]
     
 
-    Checkpoint saved:	Epoch: 4	Validation Loss: 0.5169	Learning Rate: 1.000e-03
+    Checkpoint saved:	Epoch: 6	Validation Loss: 0.4119	Learning Rate: 1.000e-03
     
 
-    Epoch 5: 100%|█████████████████████████████████| 17/17 [00:03<00:00,  4.33 batches/s]
-    Epoch 6: 100%|█████████████████████████████████| 17/17 [00:03<00:00,  4.62 batches/s]
-    Epoch 7: 100%|█████████████████████████████████| 17/17 [00:03<00:00,  4.73 batches/s]
+    Epoch 7: 100%|█████████████████████████████████| 17/17 [00:06<00:00,  2.49 batches/s]
     
 
-    Checkpoint saved:	Epoch: 7	Validation Loss: 0.5079	Learning Rate: 1.000e-03
+    Checkpoint saved:	Epoch: 7	Validation Loss: 0.3845	Learning Rate: 1.000e-03
     
 
-    Epoch 8: 100%|█████████████████████████████████| 17/17 [00:03<00:00,  4.45 batches/s]
+    Epoch 8: 100%|█████████████████████████████████| 17/17 [00:06<00:00,  2.43 batches/s]
+    Epoch 9: 100%|█████████████████████████████████| 17/17 [00:07<00:00,  2.38 batches/s]
     
 
-    Checkpoint saved:	Epoch: 8	Validation Loss: 0.3750	Learning Rate: 1.000e-03
+    Checkpoint saved:	Epoch: 9	Validation Loss: 0.2913	Learning Rate: 1.000e-03
     
 
-    Epoch 9: 100%|█████████████████████████████████| 17/17 [00:03<00:00,  4.66 batches/s]
-    Epoch 10: 100%|████████████████████████████████| 17/17 [00:04<00:00,  4.14 batches/s]
-    Epoch 11: 100%|████████████████████████████████| 17/17 [00:04<00:00,  4.24 batches/s]
-    Epoch 12: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.79 batches/s]
-    Epoch 13: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.89 batches/s]
+    Epoch 10: 100%|████████████████████████████████| 17/17 [00:06<00:00,  2.44 batches/s]
+    Epoch 11: 100%|████████████████████████████████| 17/17 [00:06<00:00,  2.44 batches/s]
+    Epoch 12: 100%|████████████████████████████████| 17/17 [00:06<00:00,  2.50 batches/s]
+    Epoch 13: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.19 batches/s]
+    Epoch 14: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.08 batches/s]
     
 
-    Training Progress:	Train Loss: 0.3781	Val Loss: 0.4415
+    Training Progress:	Train Loss: 0.3812	Val Loss: 0.3547
     
 
-    Epoch 14: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.70 batches/s]
-    Epoch 15: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.49 batches/s]
+    Epoch 15: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.10 batches/s]
+    Epoch 16: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.07 batches/s]
+    Epoch 17: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.08 batches/s]
+    Epoch 18: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.12 batches/s]
     
 
-    Checkpoint saved:	Epoch: 15	Validation Loss: 0.3108	Learning Rate: 1.000e-03
+    Checkpoint saved:	Epoch: 18	Validation Loss: 0.2715	Learning Rate: 1.000e-03
     
 
-    Epoch 16: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.50 batches/s]
-    Epoch 17: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.42 batches/s]
-    Epoch 18: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.64 batches/s]
-    Epoch 19: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.30 batches/s]
-    Epoch 20: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.64 batches/s]
+    Epoch 19: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.12 batches/s]
     
 
-    Training Progress:	Train Loss: 0.3402	Val Loss: 0.3647
+    Checkpoint saved:	Epoch: 19	Validation Loss: 0.2693	Learning Rate: 1.000e-03
     
 
-    Epoch 21: 100%|████████████████████████████████| 17/17 [00:04<00:00,  4.24 batches/s]
-    Epoch 22: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.58 batches/s]
-    Epoch 23: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.36 batches/s]
-    Epoch 24: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.52 batches/s]
-    Epoch 25: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.60 batches/s]
+    Epoch 20: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.08 batches/s]
+    Epoch 21: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.13 batches/s]
+    Epoch 22: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.08 batches/s]
+    Epoch 23: 100%|████████████████████████████████| 17/17 [00:06<00:00,  2.46 batches/s]
+    Epoch 24: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.41 batches/s]
     
 
-    Training Progress:	Train Loss: 0.3073	Val Loss: 0.4557
+    Training Progress:	Train Loss: 0.3440	Val Loss: 0.6300
     
 
-    Epoch 26: 100%|████████████████████████████████| 17/17 [00:04<00:00,  4.13 batches/s]
-    Epoch 27: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.72 batches/s]
-    Epoch 28: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.46 batches/s]
-    Epoch 29: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.43 batches/s]
+    Epoch 25: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.42 batches/s]
+    Epoch 26: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.13 batches/s]
+    Epoch 27: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.01 batches/s]
+    Epoch 28: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.29 batches/s]
+    Epoch 29: 100%|████████████████████████████████| 17/17 [00:08<00:00,  1.94 batches/s]
     
 
-    Checkpoint saved:	Epoch: 29	Validation Loss: 0.3101	Learning Rate: 1.000e-03
+    Checkpoint saved:	Epoch: 29	Validation Loss: 0.2465	Learning Rate: 1.000e-03
     
 
-    Epoch 30: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.43 batches/s]
-    Epoch 31: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.26 batches/s]
-    Epoch 32: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.51 batches/s]
-    Epoch 33: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.81 batches/s]
-    Epoch 34: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.48 batches/s]
+    Epoch 30: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.13 batches/s]
     
 
-    Checkpoint saved:	Epoch: 34	Validation Loss: 0.2597	Learning Rate: 1.000e-03
+    Checkpoint saved:	Epoch: 30	Validation Loss: 0.2455	Learning Rate: 1.000e-03
     
 
-    Epoch 35: 100%|████████████████████████████████| 17/17 [00:04<00:00,  4.20 batches/s]
-    Epoch 36: 100%|████████████████████████████████| 17/17 [00:04<00:00,  3.96 batches/s]
+    Epoch 31: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.09 batches/s]
+    Epoch 32: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.10 batches/s]
+    Epoch 33: 100%|████████████████████████████████| 17/17 [00:06<00:00,  2.53 batches/s]
     
 
-    Checkpoint saved:	Epoch: 36	Validation Loss: 0.2582	Learning Rate: 1.000e-03
+    Checkpoint saved:	Epoch: 33	Validation Loss: 0.2444	Learning Rate: 1.000e-03
     
 
-    Epoch 37: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.50 batches/s]
+    Epoch 34: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.41 batches/s]
     
 
-    Checkpoint saved:	Epoch: 37	Validation Loss: 0.2367	Learning Rate: 1.000e-03
+    Checkpoint saved:	Epoch: 34	Validation Loss: 0.2325	Learning Rate: 1.000e-03
     
 
-    Epoch 38: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.39 batches/s]
-    Epoch 39: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.30 batches/s]
-    Epoch 40: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.50 batches/s]
-    Epoch 41: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.48 batches/s]
-    Epoch 42: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.54 batches/s]
+    Epoch 35: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.02 batches/s]
+    Epoch 36: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.08 batches/s]
     
 
-    Training Progress:	Train Loss: 0.2764	Val Loss: 0.3286
+    Checkpoint saved:	Epoch: 36	Validation Loss: 0.2216	Learning Rate: 1.000e-03
     
 
-    Epoch 43: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.84 batches/s]
-    Epoch 44: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.76 batches/s]
-    Epoch 45: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.39 batches/s]
-    Epoch 46: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.52 batches/s]
-    Epoch 47: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.83 batches/s]
+    Epoch 37: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.07 batches/s]
+    Epoch 38: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.43 batches/s]
+    Epoch 39: 100%|████████████████████████████████| 17/17 [00:06<00:00,  2.48 batches/s]
     
 
-    Training Progress:	Train Loss: 0.2364	Val Loss: 0.4652
+    Checkpoint saved:	Epoch: 39	Validation Loss: 0.2157	Learning Rate: 1.000e-03
     
 
-    Epoch 48: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.44 batches/s]
-    Epoch 49: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.49 batches/s]
-    Epoch 50: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.81 batches/s]
-    Epoch 51: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.38 batches/s]
+    Epoch 40: 100%|████████████████████████████████| 17/17 [00:06<00:00,  2.47 batches/s]
     
 
-    Checkpoint saved:	Epoch: 51	Validation Loss: 0.1972	Learning Rate: 1.000e-03
+    Checkpoint saved:	Epoch: 40	Validation Loss: 0.1992	Learning Rate: 1.000e-03
     
 
-    Epoch 52: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.37 batches/s]
-    Epoch 53: 100%|████████████████████████████████| 17/17 [00:04<00:00,  4.23 batches/s]
-    Epoch 54: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.50 batches/s]
-    Epoch 55: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.60 batches/s]
-    Epoch 56: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.77 batches/s]
+    Epoch 41: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.08 batches/s]
+    Epoch 42: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.12 batches/s]
+    Epoch 43: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.09 batches/s]
+    Epoch 44: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.09 batches/s]
+    Epoch 45: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.16 batches/s]
     
 
-    Training Progress:	Train Loss: 0.2372	Val Loss: 0.2739
+    Checkpoint saved:	Epoch: 45	Validation Loss: 0.1921	Learning Rate: 1.000e-03
     
 
-    Epoch 57: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.47 batches/s]
-    Epoch 58: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.37 batches/s]
-    Epoch 59: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.52 batches/s]
-    Epoch 60: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.69 batches/s]
-    Epoch 61: 100%|████████████████████████████████| 17/17 [00:04<00:00,  4.22 batches/s]
+    Epoch 46: 100%|████████████████████████████████| 17/17 [00:06<00:00,  2.49 batches/s]
+    Epoch 47: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.38 batches/s]
+    Epoch 48: 100%|████████████████████████████████| 17/17 [00:06<00:00,  2.47 batches/s]
+    Epoch 49: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.38 batches/s]
     
 
-    Training Progress:	Train Loss: 0.2368	Val Loss: 0.2031
+    Checkpoint saved:	Epoch: 49	Validation Loss: 0.1913	Learning Rate: 1.000e-03
     
 
-    Epoch 62: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.38 batches/s]
-    Epoch 63: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.90 batches/s]
-    Epoch 64: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.52 batches/s]
-    Epoch 65: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.46 batches/s]
-    Epoch 66: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.72 batches/s]
+    Epoch 50: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.33 batches/s]
+    Epoch 51: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.37 batches/s]
+    Epoch 52: 100%|████████████████████████████████| 17/17 [00:06<00:00,  2.47 batches/s]
     
 
-    Training Progress:	Train Loss: 0.2390	Val Loss: 0.2357
+    Checkpoint saved:	Epoch: 52	Validation Loss: 0.1820	Learning Rate: 1.000e-03
     
 
-    Epoch 67: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.55 batches/s]
-    Epoch 68: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.29 batches/s]
-    Epoch 69: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.54 batches/s]
-    Epoch 70: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.46 batches/s]
-    Epoch 71: 100%|████████████████████████████████| 17/17 [00:04<00:00,  4.19 batches/s]
+    Epoch 53: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.38 batches/s]
+    Epoch 54: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.34 batches/s]
+    Epoch 55: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.40 batches/s]
+    Epoch 56: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.34 batches/s]
+    Epoch 57: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.01 batches/s]
     
 
-    Training Progress:	Train Loss: 0.2258	Val Loss: 0.2665
+    Training Progress:	Train Loss: 0.2356	Val Loss: 0.2061
     
 
-    Epoch 72: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.59 batches/s]
-    Epoch 73: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.49 batches/s]
-    Epoch 74: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.62 batches/s]
-    Epoch 75: 100%|████████████████████████████████| 17/17 [00:03<00:00,  5.01 batches/s]
-    Epoch 76: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.39 batches/s]
+    Epoch 58: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.06 batches/s]
+    Epoch 59: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.08 batches/s]
+    Epoch 60: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.05 batches/s]
+    Epoch 61: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.06 batches/s]
     
 
-    Training Progress:	Train Loss: 0.2107	Val Loss: 0.3702
+    Checkpoint saved:	Epoch: 61	Validation Loss: 0.1785	Learning Rate: 1.000e-03
     
 
-    Epoch 77: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.67 batches/s]
-    Epoch 78: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.74 batches/s]
-    Epoch 79: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.25 batches/s]
-    Epoch 80: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.71 batches/s]
+    Epoch 62: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.08 batches/s]
+    Epoch 63: 100%|████████████████████████████████| 17/17 [00:08<00:00,  1.97 batches/s]
     
 
-    Checkpoint saved:	Epoch: 80	Validation Loss: 0.1927	Learning Rate: 1.000e-03
+    Checkpoint saved:	Epoch: 63	Validation Loss: 0.1782	Learning Rate: 1.000e-03
     
 
-    Epoch 81: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.42 batches/s]
-    Epoch 82: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.66 batches/s]
-    Epoch 83: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.46 batches/s]
-    Epoch 84: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.51 batches/s]
-    Epoch 85: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.84 batches/s]
+    Epoch 64: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.07 batches/s]
+    Epoch 65: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.09 batches/s]
     
 
-    Training Progress:	Train Loss: 0.2135	Val Loss: 0.2280
+    Checkpoint saved:	Epoch: 65	Validation Loss: 0.1768	Learning Rate: 1.000e-03
     
 
-    Epoch 86: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.47 batches/s]
-    Epoch 87: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.79 batches/s]
+    Epoch 66: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.16 batches/s]
+    Epoch 67: 100%|████████████████████████████████| 17/17 [00:06<00:00,  2.52 batches/s]
+    Epoch 68: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.40 batches/s]
+    Epoch 69: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.38 batches/s]
+    Epoch 70: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.38 batches/s]
     
 
-    Checkpoint saved:	Epoch: 87	Validation Loss: 0.1841	Learning Rate: 1.000e-03
+    Training Progress:	Train Loss: 0.2353	Val Loss: 0.2651
     
 
-    Epoch 88: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.56 batches/s]
+    Epoch 71: 100%|████████████████████████████████| 17/17 [00:08<00:00,  1.97 batches/s]
+    Epoch 72: 100%|████████████████████████████████| 17/17 [00:06<00:00,  2.48 batches/s]
+    Epoch 73: 100%|████████████████████████████████| 17/17 [00:06<00:00,  2.48 batches/s]
+    Epoch 74: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.15 batches/s]
+    Epoch 75: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.10 batches/s]
     
 
-    Checkpoint saved:	Epoch: 88	Validation Loss: 0.1763	Learning Rate: 1.000e-03
+    Checkpoint saved:	Epoch: 75	Validation Loss: 0.1747	Learning Rate: 1.000e-03
     
 
-    Epoch 89: 100%|████████████████████████████████| 17/17 [00:04<00:00,  4.08 batches/s]
+    Epoch 76: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.08 batches/s]
+    Epoch 77: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.13 batches/s]
+    Epoch 78: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.01 batches/s]
+    Epoch 79: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.05 batches/s]
+    Epoch 80: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.07 batches/s]
     
 
-    Checkpoint saved:	Epoch: 89	Validation Loss: 0.1751	Learning Rate: 1.000e-03
+    Training Progress:	Train Loss: 0.2027	Val Loss: 0.1921
     
 
-    Epoch 90: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.81 batches/s]
-    Epoch 91: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.56 batches/s]
-    Epoch 92: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.51 batches/s]
-    Epoch 93: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.45 batches/s]
-    Epoch 94: 100%|████████████████████████████████| 17/17 [00:03<00:00,  5.03 batches/s]
+    Epoch 81: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.00 batches/s]
+    Epoch 82: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.31 batches/s]
+    Epoch 83: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.38 batches/s]
+    Epoch 84: 100%|████████████████████████████████| 17/17 [00:06<00:00,  2.43 batches/s]
+    Epoch 85: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.38 batches/s]
     
 
-    Training Progress:	Train Loss: 0.1984	Val Loss: 0.2950
+    Training Progress:	Train Loss: 0.2242	Val Loss: 0.1913
     
 
-    Epoch 95: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.27 batches/s]
-    Epoch 96: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.48 batches/s]
-    Epoch 97: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.62 batches/s]
-    Epoch 98: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.54 batches/s]
-    Epoch 99: 100%|████████████████████████████████| 17/17 [00:03<00:00,  4.55 batches/s]
+    Epoch 86: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.30 batches/s]
+    Epoch 87: 100%|████████████████████████████████| 17/17 [00:06<00:00,  2.54 batches/s]
+    Epoch 88: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.18 batches/s]
     
 
-    Training Progress:	Train Loss: 0.2027	Val Loss: 0.2310
+    Checkpoint saved:	Epoch: 88	Validation Loss: 0.1692	Learning Rate: 1.000e-03
     
 
-    Epoch 100: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.88 batches/s]
+    Epoch 89: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.10 batches/s]
     
 
-#### Training with a Learning Rate Scheduler
+    Checkpoint saved:	Epoch: 89	Validation Loss: 0.1653	Learning Rate: 1.000e-03
+    
+
+    Epoch 90: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.02 batches/s]
+    Epoch 91: 100%|████████████████████████████████| 17/17 [00:08<00:00,  1.97 batches/s]
+    Epoch 92: 100%|████████████████████████████████| 17/17 [00:07<00:00,  2.27 batches/s]
+    Epoch 93: 100%|████████████████████████████████| 17/17 [00:08<00:00,  1.94 batches/s]
+    Epoch 94: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.04 batches/s]
+    
+
+    Training Progress:	Train Loss: 0.2292	Val Loss: 0.2150
+    
+
+    Epoch 95: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.11 batches/s]
+    Epoch 96: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.12 batches/s]
+    Epoch 97: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.08 batches/s]
+    
+
+    Checkpoint saved:	Epoch: 97	Validation Loss: 0.1628	Learning Rate: 1.000e-03
+    
+
+    Epoch 98: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.00 batches/s]
+    Epoch 99: 100%|████████████████████████████████| 17/17 [00:08<00:00,  2.06 batches/s]
+    Epoch 100: 100%|███████████████████████████████| 17/17 [00:08<00:00,  2.10 batches/s]
+    
+
+##### Training with a Learning Rate Scheduler
 
 [Table of Contents](#Table-of-Contents)
 
@@ -647,7 +682,7 @@ else:
     val_loss = np.inf
     train_loss = np.inf
 count = 0
-while optimizer.param_groups[0]['lr'] > 1e-7 and val_loss > 0.1:
+while optimizer.param_groups[0]['lr'] > 1e-6 and val_loss > 0.1:
     epoch += 1
     progress_bar = tqdm(
         train_loader, 
@@ -675,155 +710,282 @@ while optimizer.param_groups[0]['lr'] > 1e-7 and val_loss > 0.1:
             count = 0
 ```
 
-    Checkpoint loaded:	Epoch: 187	Validation Loss: 0.1421	Learning Rate: 1.000e-04
+    Checkpoint loaded:	Epoch: 156	Validation Loss: 0.1352	Learning Rate: 1.000e-03
     
 
-    Epoch 188: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.31 batches/s]
-    Epoch 189: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.45 batches/s]
-    Epoch 190: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.11 batches/s]
+    Epoch 157: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.43 batches/s]
+    Epoch 158: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.88 batches/s]
+    Epoch 159: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.85 batches/s]
+    Epoch 160: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.79 batches/s]
+    Epoch 161: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.74 batches/s]
     
 
-    Epoch 00183: reducing learning rate of group 0 to 1.0000e-05.
+    Training Progress:	Epoch: 161	Train Loss: 0.1625	Val Loss: 0.1663	Learning Rate = 1.0e-03
     
 
-    Epoch 191: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.04 batches/s]
-    Epoch 192: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.33 batches/s]
+    Epoch 162: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.69 batches/s]
     
 
-    Training Progress:	Epoch: 192	Train Loss: 0.1541	Val Loss: 0.1562	Learning Rate = 1.0e-05
+    Checkpoint saved:	Epoch: 162	Validation Loss: 0.1344	Learning Rate: 1.000e-03
     
 
-    Epoch 193: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.16 batches/s]
-    Epoch 194: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.06 batches/s]
-    Epoch 195: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.29 batches/s]
-    Epoch 196: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.12 batches/s]
-    Epoch 197: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.10 batches/s]
+    Epoch 163: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.77 batches/s]
+    Epoch 164: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.58 batches/s]
+    Epoch 165: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.67 batches/s]
+    Epoch 166: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.76 batches/s]
+    Epoch 167: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.80 batches/s]
     
 
-    Training Progress:	Epoch: 197	Train Loss: 0.1498	Val Loss: 0.1551	Learning Rate = 1.0e-05
+    Training Progress:	Epoch: 167	Train Loss: 0.1667	Val Loss: 0.1613	Learning Rate = 1.0e-03
     
 
-    Epoch 198: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.22 batches/s]
-    Epoch 199: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.33 batches/s]
-    Epoch 200: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.07 batches/s]
-    Epoch 201: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.33 batches/s]
-    Epoch 202: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.13 batches/s]
+    Epoch 168: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.82 batches/s]
+    Epoch 169: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.73 batches/s]
+    Epoch 170: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.65 batches/s]
+    Epoch 171: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.71 batches/s]
+    Epoch 172: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.76 batches/s]
     
 
-    Training Progress:	Epoch: 202	Train Loss: 0.1493	Val Loss: 0.1557	Learning Rate = 1.0e-05
+    Training Progress:	Epoch: 172	Train Loss: 0.1693	Val Loss: 0.1613	Learning Rate = 1.0e-03
     
 
-    Epoch 203: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.00 batches/s]
-    Epoch 204: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.99 batches/s]
-    Epoch 205: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.24 batches/s]
-    Epoch 206: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.01 batches/s]
-    Epoch 207: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.08 batches/s]
+    Epoch 173: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.83 batches/s]
+    Epoch 174: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.77 batches/s]
+    Epoch 175: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.95 batches/s]
+    Epoch 176: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.79 batches/s]
+    Epoch 177: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.71 batches/s]
     
 
-    Training Progress:	Epoch: 207	Train Loss: 0.1513	Val Loss: 0.1507	Learning Rate = 1.0e-05
+    Training Progress:	Epoch: 177	Train Loss: 0.1636	Val Loss: 0.1891	Learning Rate = 1.0e-03
     
 
-    Epoch 208: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.22 batches/s]
-    Epoch 209: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.05 batches/s]
-    Epoch 210: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.12 batches/s]
-    Epoch 211: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.39 batches/s]
+    Epoch 178: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.72 batches/s]
+    Epoch 179: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.58 batches/s]
+    Epoch 180: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.81 batches/s]
+    Epoch 181: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.48 batches/s]
+    Epoch 182: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.80 batches/s]
     
 
-    Epoch 00204: reducing learning rate of group 0 to 1.0000e-06.
+    Training Progress:	Epoch: 182	Train Loss: 0.1528	Val Loss: 0.1485	Learning Rate = 1.0e-03
     
 
-    Epoch 212: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.09 batches/s]
+    Epoch 183: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.75 batches/s]
     
 
-    Training Progress:	Epoch: 212	Train Loss: 0.1513	Val Loss: 0.1590	Learning Rate = 1.0e-06
+    Epoch 00317: reducing learning rate of group 0 to 1.0000e-04.
     
 
-    Epoch 213: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.04 batches/s]
-    Epoch 214: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.28 batches/s]
-    Epoch 215: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.20 batches/s]
-    Epoch 216: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.02 batches/s]
-    Epoch 217: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.25 batches/s]
+    Epoch 184: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.79 batches/s]
     
 
-    Training Progress:	Epoch: 217	Train Loss: 0.1494	Val Loss: 0.1569	Learning Rate = 1.0e-06
+    Checkpoint saved:	Epoch: 184	Validation Loss: 0.1289	Learning Rate: 1.000e-04
     
 
-    Epoch 218: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.95 batches/s]
-    Epoch 219: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.32 batches/s]
-    Epoch 220: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.41 batches/s]
-    Epoch 221: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.22 batches/s]
-    Epoch 222: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.15 batches/s]
+    Epoch 185: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.82 batches/s]
     
 
-    Training Progress:	Epoch: 222	Train Loss: 0.1524	Val Loss: 0.1613	Learning Rate = 1.0e-06
+    Checkpoint saved:	Epoch: 185	Validation Loss: 0.1280	Learning Rate: 1.000e-04
     
 
-    Epoch 223: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.37 batches/s]
-    Epoch 224: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.95 batches/s]
-    Epoch 225: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.10 batches/s]
-    Epoch 226: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.12 batches/s]
-    Epoch 227: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.15 batches/s]
+    Epoch 186: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.76 batches/s]
+    Epoch 187: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.68 batches/s]
+    Epoch 188: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.69 batches/s]
+    Epoch 189: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.72 batches/s]
+    Epoch 190: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.74 batches/s]
     
 
-    Training Progress:	Epoch: 227	Train Loss: 0.1540	Val Loss: 0.1617	Learning Rate = 1.0e-06
+    Training Progress:	Epoch: 190	Train Loss: 0.1405	Val Loss: 0.1335	Learning Rate = 1.0e-04
     
 
-    Epoch 228: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.10 batches/s]
-    Epoch 229: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.30 batches/s]
-    Epoch 230: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.10 batches/s]
-    Epoch 231: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.15 batches/s]
-    Epoch 232: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.38 batches/s]
+    Epoch 191: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.73 batches/s]
+    Epoch 192: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.88 batches/s]
+    Epoch 193: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.67 batches/s]
+    Epoch 194: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.73 batches/s]
+    Epoch 195: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.78 batches/s]
     
 
-    Epoch 00225: reducing learning rate of group 0 to 1.0000e-07.
-    Training Progress:	Epoch: 232	Train Loss: 0.1474	Val Loss: 0.1565	Learning Rate = 1.0e-07
+    Training Progress:	Epoch: 195	Train Loss: 0.1368	Val Loss: 0.1340	Learning Rate = 1.0e-04
     
 
-    Epoch 233: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.16 batches/s]
-    Epoch 234: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.13 batches/s]
-    Epoch 235: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.32 batches/s]
-    Epoch 236: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.17 batches/s]
-    Epoch 237: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.40 batches/s]
+    Epoch 196: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.78 batches/s]
+    Epoch 197: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.67 batches/s]
+    Epoch 198: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.65 batches/s]
+    Epoch 199: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.83 batches/s]
+    Epoch 200: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.76 batches/s]
     
 
-    Training Progress:	Epoch: 237	Train Loss: 0.1515	Val Loss: 0.1569	Learning Rate = 1.0e-07
+    Training Progress:	Epoch: 200	Train Loss: 0.1407	Val Loss: 0.1327	Learning Rate = 1.0e-04
     
 
-    Epoch 238: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.32 batches/s]
-    Epoch 239: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.04 batches/s]
-    Epoch 240: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.34 batches/s]
-    Epoch 241: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.32 batches/s]
-    Epoch 242: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.18 batches/s]
+    Epoch 201: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.81 batches/s]
+    Epoch 202: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.89 batches/s]
+    Epoch 203: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.78 batches/s]
+    Epoch 204: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.86 batches/s]
+    Epoch 205: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.62 batches/s]
     
 
-    Training Progress:	Epoch: 242	Train Loss: 0.1513	Val Loss: 0.1558	Learning Rate = 1.0e-07
+    Training Progress:	Epoch: 205	Train Loss: 0.1351	Val Loss: 0.1393	Learning Rate = 1.0e-04
     
 
-    Epoch 243: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.27 batches/s]
-    Epoch 244: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.32 batches/s]
-    Epoch 245: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.07 batches/s]
-    Epoch 246: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.31 batches/s]
-    Epoch 247: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.08 batches/s]
+    Epoch 206: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.56 batches/s]
     
 
-    Training Progress:	Epoch: 247	Train Loss: 0.1553	Val Loss: 0.1512	Learning Rate = 1.0e-07
+    Epoch 00340: reducing learning rate of group 0 to 1.0000e-05.
     
 
-    Epoch 248: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.13 batches/s]
-    Epoch 249: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.29 batches/s]
-    Epoch 250: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.12 batches/s]
-    Epoch 251: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.04 batches/s]
-    Epoch 252: 100%|███████████████████████████████| 17/17 [00:03<00:00,  4.30 batches/s]
+    Epoch 207: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.80 batches/s]
+    Epoch 208: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.77 batches/s]
+    Epoch 209: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.83 batches/s]
+    Epoch 210: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.76 batches/s]
     
 
-    Training Progress:	Epoch: 252	Train Loss: 0.1523	Val Loss: 0.1574	Learning Rate = 1.0e-07
+    Training Progress:	Epoch: 210	Train Loss: 0.1396	Val Loss: 0.1353	Learning Rate = 1.0e-05
     
 
-    Epoch 253: 100%|███████████████████████████████| 17/17 [00:04<00:00,  4.13 batches/s]
+    Epoch 211: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.73 batches/s]
+    Epoch 212: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.83 batches/s]
+    Epoch 213: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.89 batches/s]
+    Epoch 214: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.76 batches/s]
+    Epoch 215: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.82 batches/s]
     
 
-    Epoch 00246: reducing learning rate of group 0 to 1.0000e-08.
+    Training Progress:	Epoch: 215	Train Loss: 0.1328	Val Loss: 0.1372	Learning Rate = 1.0e-05
     
+
+    Epoch 216: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.76 batches/s]
+    Epoch 217: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.89 batches/s]
+    Epoch 218: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.84 batches/s]
+    Epoch 219: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.81 batches/s]
+    Epoch 220: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.82 batches/s]
+    
+
+    Training Progress:	Epoch: 220	Train Loss: 0.1351	Val Loss: 0.1350	Learning Rate = 1.0e-05
+    
+
+    Epoch 221: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.70 batches/s]
+    Epoch 222: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.52 batches/s]
+    Epoch 223: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.60 batches/s]
+    Epoch 224: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.60 batches/s]
+    Epoch 225: 100%|███████████████████████████████| 17/17 [00:05<00:00,  3.15 batches/s]
+    
+
+    Training Progress:	Epoch: 225	Train Loss: 0.1352	Val Loss: 0.1348	Learning Rate = 1.0e-05
+    
+
+    Epoch 226: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.54 batches/s]
+    Epoch 227: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.61 batches/s]
+    
+
+    Epoch 00361: reducing learning rate of group 0 to 1.0000e-06.
+    
+
+    Epoch 228: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.74 batches/s]
+    Epoch 229: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.49 batches/s]
+    Epoch 230: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.81 batches/s]
+    
+
+    Training Progress:	Epoch: 230	Train Loss: 0.1373	Val Loss: 0.1344	Learning Rate = 1.0e-06
+    
+
+    Epoch 231: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.71 batches/s]
+    Epoch 232: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.76 batches/s]
+    Epoch 233: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.75 batches/s]
+    Epoch 234: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.82 batches/s]
+    Epoch 235: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.72 batches/s]
+    
+
+    Training Progress:	Epoch: 235	Train Loss: 0.1341	Val Loss: 0.1341	Learning Rate = 1.0e-06
+    
+
+    Epoch 236: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.65 batches/s]
+    Epoch 237: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.43 batches/s]
+    Epoch 238: 100%|███████████████████████████████| 17/17 [00:05<00:00,  3.23 batches/s]
+    Epoch 239: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.45 batches/s]
+    Epoch 240: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.58 batches/s]
+    
+
+    Training Progress:	Epoch: 240	Train Loss: 0.1340	Val Loss: 0.1362	Learning Rate = 1.0e-06
+    
+
+    Epoch 241: 100%|███████████████████████████████| 17/17 [00:05<00:00,  3.34 batches/s]
+    Epoch 242: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.49 batches/s]
+    Epoch 243: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.72 batches/s]
+    Epoch 244: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.47 batches/s]
+    Epoch 245: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.57 batches/s]
+    
+
+    Training Progress:	Epoch: 245	Train Loss: 0.1334	Val Loss: 0.1345	Learning Rate = 1.0e-06
+    
+
+    Epoch 246: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.76 batches/s]
+    Epoch 247: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.84 batches/s]
+    Epoch 248: 100%|███████████████████████████████| 17/17 [00:04<00:00,  3.72 batches/s]
+    
+
+    Epoch 00382: reducing learning rate of group 0 to 1.0000e-07.
+    
+
+<a id='p1d'></a>
+##### (d) Report training loss, validation loss, and validation DICE curves. Comment on any overfitting or underfitting observed.
+
+[Table of Contents](#Table-of-Contents)
+
+
+```python
+plt.figure(figsize=(15, 7.5))
+plt.plot(train_losses, label="Training Loss")
+plt.plot(val_losses, label="Validation Loss")
+plt.plot(1 - np.array(val_losses), label="Validation DICE")
+plt.title("Training, Validation Loss, and Validation DICE Curves")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.legend()
+plt.show()
+
+```
+
+
+    
+![png](README_files/README_26_0.png)
+    
+
+
+<a id='p2a'></a>
+##### (e) Report the average dice score over your test-set. **You should be able to achieve a score of around 0.7 or better**.
+
+[Table of Contents](#Table-of-Contents)
+
+
+```python
+# Report the average dice score over your test-set.
+test_loader = DataLoader(test_dataset, batch_size=8, shuffle=False)
+model.eval()
+dice_coeffs = []
+with torch.no_grad():
+    for image, mask, shape in test_loader:
+        image = image.to(device)
+        mask = mask.to(device)
+        pred = torch.round(model(image))
+        pred = pred.cpu()
+        mask = mask.cpu()
+        pred = np.squeeze(pred, axis=1)
+        mask = np.squeeze(mask, axis=1)
+        for i in range(pred.shape[0]):
+            dice_coeffs.append(dice_coefficient(pred[i], mask[i]))
+print("Average dice score: {:.4f}".format(np.mean(dice_coeffs)))
+```
+
+    c:\Users\Alqia\miniconda3\envs\torch\lib\site-packages\torchvision\transforms\functional.py:1603: UserWarning: The default value of the antialias parameter of all the resizing transforms (Resize(), RandomResizedCrop(), etc.) will change from None to True in v0.17, in order to be consistent across the PIL and Tensor backends. To suppress this warning, directly pass antialias=True (recommended, future default), antialias=None (current default, which means False for Tensors and True for PIL), or antialias=False (only works on Tensors - PIL will still use antialiasing). This also applies if you are using the inference transforms from the models weights: update the call to weights.transforms(antialias=True).
+      warnings.warn(
+    
+
+    Average DICE Coefficient: 0.8640
+    
+
+<a id='p2b'></a>
+##### (f) Show at least 3 example segmentations (i.e. show the RGB image, mask, and RGB image X mask for 3 samples) from your training data and 3 from your testing data. Comment on the generalization capabilities of your trained network.
+
+[Table of Contents](#Table-of-Contents)
 
 
 ```python
@@ -858,9 +1020,48 @@ with torch.no_grad():
         ax[3].imshow(pred_i, alpha=0.5)
         ax[3].set_title("Overlay")
         plt.show()
+```
+
+    Checkpoint loaded:	Epoch: 185	Validation Loss: 0.1280	Learning Rate: 1.000e-04
     
 
-    for image in os.listdir("./out_of_distribution_images"):
+    c:\Users\Alqia\miniconda3\envs\torch\lib\site-packages\torchvision\transforms\functional.py:1603: UserWarning: The default value of the antialias parameter of all the resizing transforms (Resize(), RandomResizedCrop(), etc.) will change from None to True in v0.17, in order to be consistent across the PIL and Tensor backends. To suppress this warning, directly pass antialias=True (recommended, future default), antialias=None (current default, which means False for Tensors and True for PIL), or antialias=False (only works on Tensors - PIL will still use antialiasing). This also applies if you are using the inference transforms from the models weights: update the call to weights.transforms(antialias=True).
+      warnings.warn(
+    
+
+
+    
+![png](README_files/README_30_2.png)
+    
+
+
+
+    
+![png](README_files/README_30_3.png)
+    
+
+
+
+    
+![png](README_files/README_30_4.png)
+    
+
+
+The model is able to detect the edges of the pedestrians in the images. The model is not able to detect the pedestrians completely. This is because the dataset is very small and the model is not able to learn the features of the objects. The model is also not able to detect the pedestrians in out of distribution images that are not present in the dataset. These images use a different camera with different color composition, focus, and resolution. The model is not able to detect the pedestrians in these images because it has not seen these types of images before.
+
+<a id='p2c'></a>
+##### (g) Show at least 1 example segmentation on an input image **<ins>not</ins> from the FudanPed dataset**. Again, comment on the generalization capabilities of your network with respect to this "out-of-distribution" image.
+
+[Table of Contents](#Table-of-Contents)
+
+
+```python
+model, optimizer, epoch, val_loss = load_checkpoint(checkpoint_path, model, optimizer)
+test_loader = DataLoader(test_dataset, batch_size=3, shuffle=False)
+# Use the model on the test set and visualize the results
+model.eval()
+with torch.no_grad():
+     for image in os.listdir("./out_of_distribution_images"):
         image = cv2.imread(os.path.join("./out_of_distribution_images", image))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image, shape = square_pad(image)
@@ -877,7 +1078,7 @@ with torch.no_grad():
         image = image.cpu().numpy()
         image = image.transpose(1, 2, 0)
         image = remove_pad(image, shape)
-        plt.figure(figsize=(20, 20))
+        plt.figure(figsize=(15, 15))
         plt.subplot(1, 3, 1)
         plt.imshow(image)
         plt.subplot(1, 3, 2)
@@ -888,64 +1089,23 @@ with torch.no_grad():
         plt.show()
 ```
 
-    Checkpoint loaded:	Epoch: 187	Validation Loss: 0.1421	Learning Rate: 1.000e-04
+    Checkpoint loaded:	Epoch: 185	Validation Loss: 0.1280	Learning Rate: 1.000e-04
     
 
 
     
-![png](README_files/README_22_1.png)
-    
-
-
-
-    
-![png](README_files/README_22_2.png)
+![png](README_files/README_33_1.png)
     
 
 
 
     
-![png](README_files/README_22_3.png)
+![png](README_files/README_33_2.png)
     
 
 
 
     
-![png](README_files/README_22_4.png)
+![png](README_files/README_33_3.png)
     
 
-
-
-    
-![png](README_files/README_22_5.png)
-    
-
-
-
-    
-![png](README_files/README_22_6.png)
-    
-
-
-The model is trained for 40 epochs and the results are shown below. The model is able to detect the edges of the objects in the image and the mask. The model is not able to detect the objects completely. This is because the dataset is very small and the model is not able to learn the features of the objects. The model is also not able to detect the objects that are not present in the training set.
-
-
-<a id='p1d'></a>
-##### (d) Report training loss, validation loss, and validation DICE curves. Comment on any overfitting or underfitting observed.
-
-[Table of Contents](#Table-of-Contents)
-
-<a id='p2a'></a>
-##### (e) Report the average dice score over your test-set. **You should be able to achieve a score of around 0.7 or better**.
-
-[Table of Contents](#Table-of-Contents)
-
-<a id='p2b'></a>
-##### (f) Show at least 3 example segmentations (i.e. show the RGB image, mask, and RGB image X mask for 3 samples) from your training data and 3 from your testing data. Comment on the generalization capabilities of your trained network.
-
-[Table of Contents](#Table-of-Contents)
-
-<a id='p2c'></a>
-##### (g) Show at least 1 example segmentation on an input image **<ins>not</ins> from the FudanPed dataset**. Again, comment on the generalization capabilities of your network with respect to this "out-of-distribution" image.
-
-[Table of Contents](#Table-of-Contents)
