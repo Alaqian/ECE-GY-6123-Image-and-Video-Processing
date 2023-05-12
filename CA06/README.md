@@ -239,7 +239,7 @@ pred_img = pred_img_pad[0:rows,0:cols]
 err_img = err_img_pad[0:rows,0:cols]
 ```
 
-    100%|██████████| 30/30 [00:23<00:00,  1.29it/s]
+    100%|██████████| 30/30 [00:19<00:00,  1.54it/s]
     
 
 
@@ -248,7 +248,7 @@ err_img = err_img_pad[0:rows,0:cols]
 # plot the original image, predicted image, error image
 plt.figure(figsize=(15,15))
 plt.subplot(131)
-plt.imshow(img1,cmap='gray')
+plt.imshow(img2,cmap='gray')
 plt.title('Original Image')
 plt.axis('off')
 plt.subplot(132)
@@ -307,7 +307,7 @@ for q in Q_list:
     rec_img = rec_img_pad[0:rows, 0:cols]
     
     # Calculate PSNR, Append items to lists
-    psnr = 10 * np.log10(255**2 / mse(img2 - rec_img))
+    psnr = 10 * np.log10(255**2 / mse(rec_img - img2))
     PSNR.append(psnr)
     Non_zero.append(non_zero)
     # Clip rec_img to (0,255) and change back to uint8
