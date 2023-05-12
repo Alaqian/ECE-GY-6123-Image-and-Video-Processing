@@ -113,10 +113,10 @@ def EBMA(template,img,x0,y0,range_x,range_y):
             mse_error = mse(error)
             if mse_error < min_mse:
                 # update motion vector, matchblock and max_error if the error of the new block is smaller
-                xm = i
-                ym = j
+                xm = i - x0
+                ym = j - y0
                 matchblock = candidate
-                min_mse = error
+                min_mse = mse_error
     return xm, ym, matchblock
 ```
 
@@ -146,8 +146,8 @@ def quant(dct_coef, q):
 ```python
 ################################################ TODO ###############################################
 # define searching range for EBMA
-range_x = 16    
-range_y = 16
+range_x = 24    
+range_y = 24
 
 # get the row and column size of the images.
 rows, cols = img1.shape
@@ -232,48 +232,42 @@ for x0 in tqdm(np.arange(1,(rows-1), N)):
         
         ## Put the min_pred_block and min_err_block in the correct position in the output images
         pred_img_pad[x0:x0 + N, y0:y0 + N] = min_pred_block
-        err_img_pad[x0:x0 + N, y0:y0 + N] = min
+        err_img_pad[x0:x0 + N, y0:y0 + N] = min_err_block
 
 # Remove padding
 pred_img = pred_img_pad[0:rows,0:cols]
 err_img = err_img_pad[0:rows,0:cols]
 ```
 
-      0%|          | 0/30 [00:00<?, ?it/s]
+    100%|██████████| 30/30 [00:18<00:00,  1.63it/s]
     
-
-
-    ---------------------------------------------------------------------------
-
-    ValueError                                Traceback (most recent call last)
-
-    Cell In[6], line 79
-         75     min_MSE = current_mse
-         77 #inter-prediction
-         78 #perform EBMA to the current block to find best match in img1
-    ---> 79 xm, ym, pred_block = EBMA(patch,img1,x0,y0,range_x,range_y)
-         80 err_block = pred_block - patch
-         81 current_mse = mse(err_block)
-    
-
-    Cell In[4], line 20, in EBMA(template, img, x0, y0, range_x, range_y)
-         18 error = template - candidate
-         19 mse_error = mse(error)
-    ---> 20 if mse_error < min_mse:
-         21     # update motion vector, matchblock and max_error if the error of the new block is smaller
-         22     xm = i
-         23     ym = j
-    
-
-    ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
-
 
 
 ```python
 ################################################ TODO ###############################################
 # plot the original image, predicted image, error image
-...
+plt.figure(figsize=(15,15))
+plt.subplot(131)
+plt.imshow(img1,cmap='gray')
+plt.title('Original Image')
+plt.axis('off')
+plt.subplot(132)
+plt.imshow(pred_img,cmap='gray')
+plt.title('Predicted Image')
+plt.axis('off')
+plt.subplot(133)
+plt.imshow(err_img,cmap='gray')
+plt.title('Error Image')
+plt.axis('off')
+plt.show()
+
 ```
+
+
+    
+![png](README_files/README_9_0.png)
+    
+
 
 ## Test different quantization step sizes
 - Using the err_img_pad from above, quantize the error image with different step sizes. Then add to the predicted image to generate the reconstructed image. Test different step sizes and evaluate PSNR.
@@ -293,31 +287,32 @@ for q in Q_list:
     non_zero = 0
     rec_img_pad = np.zeros(img2_pad.shape)
     # Assume first row & col are already reconstructed, copy them directly form img2
-    ...
+    rec_img_pad[0,:] = img2_pad[0,:]
+    rec_img_pad[:,0] = img2_pad[:,0]
     for x0 in np.arange(1,(rows-1), N):
         for y0 in np.arange(1,(cols-1), N):
             # extract current error block from the error image
-            err_block = ...
+            err_block = err_img_pad[x0:x0+N,y0:y0+N]
             # perform DCT to the current error block, input astype float
-            dct_block =  ...
+            dct_block = 
             # quantize the coefficients
-            dct_block_quant = ...
+            dct_block_quant = 
             # Count number of nonzero in this block, update nonzero
-            non_zero += ...
+            non_zero += 
             # IDCT to the quantized dct block, input astype float
-            err_block_rec = ...
+            err_block_rec = 
             # reconstruct the block
-            rec_img_pad[...] = ...
+            rec_img_pad[] = 
     # Remove padding
     rec_img = rec_img_pad[0:rows, 0:cols]
     
     # Calculate PSNR, Append items to lists
-    ...
-    PSNR.append(...)
-    Non_zero.append(...)
+    
+    PSNR.append()
+    Non_zero.append()
     # Clip rec_img to (0,255) and change back to uint8
     rec_img = np.clip(rec_img,0,255).astype('uint8')
-    Rec_img.append(...)
+    Rec_img.append()
 ```
 
 ### Plot the PSNR vs. Nonzero curve, each Reconstructed image with different quantization steps
@@ -326,4 +321,5 @@ for q in Q_list:
 ```python
 ################################################ TODO ###############################################
 # Plot the PSNR vs. Nonzero curve, each Reconstructed image with different quantization steps
+
 ```
