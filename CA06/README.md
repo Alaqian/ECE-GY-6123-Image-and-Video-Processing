@@ -239,7 +239,7 @@ pred_img = pred_img_pad[0:rows,0:cols]
 err_img = err_img_pad[0:rows,0:cols]
 ```
 
-    100%|██████████| 30/30 [00:23<00:00,  1.28it/s]
+    100%|██████████| 30/30 [00:23<00:00,  1.29it/s]
     
 
 
@@ -302,7 +302,7 @@ for q in Q_list:
             # IDCT to the quantized dct block, input astype float
             err_block_rec = cv2.idct(dct_block_quant.astype('float'))
             # reconstruct the block
-            rec_img_pad[x0:x0+N, y0:y0+N] = img2_pad[x0:x0+N, y0:y0+N] + err_block_rec
+            rec_img_pad[x0:x0+N, y0:y0+N] = pred_img_pad[x0:x0+N, y0:y0+N] + err_block_rec
     # Remove padding
     rec_img = rec_img_pad[0:rows, 0:cols]
     
