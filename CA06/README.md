@@ -239,7 +239,7 @@ pred_img = pred_img_pad[0:rows,0:cols]
 err_img = err_img_pad[0:rows,0:cols]
 ```
 
-    100%|██████████| 30/30 [00:18<00:00,  1.63it/s]
+    100%|██████████| 30/30 [00:22<00:00,  1.34it/s]
     
 
 
@@ -294,25 +294,25 @@ for q in Q_list:
             # extract current error block from the error image
             err_block = err_img_pad[x0:x0+N,y0:y0+N]
             # perform DCT to the current error block, input astype float
-            dct_block = 
+            dct_block = cv2.dct(err_block.astype('float'))
             # quantize the coefficients
-            dct_block_quant = 
+            dct_block_quant = quant(dct_block,q)
             # Count number of nonzero in this block, update nonzero
-            non_zero += 
+            non_zero += np.count_nonzero(dct_block_quant)
             # IDCT to the quantized dct block, input astype float
-            err_block_rec = 
+            err_block_rec = cv2.idct(dct_block_quant.astype('float')) 
             # reconstruct the block
-            rec_img_pad[] = 
+            rec_img_pad[x0:x0+N, y0:y0+N] = err_block_rec
     # Remove padding
     rec_img = rec_img_pad[0:rows, 0:cols]
     
     # Calculate PSNR, Append items to lists
-    
-    PSNR.append()
-    Non_zero.append()
+    psnr = 10 * np.log10(255**2 / mse(img2 - rec_img))
+    PSNR.append(psnr)
+    Non_zero.append(non_zero)
     # Clip rec_img to (0,255) and change back to uint8
     rec_img = np.clip(rec_img,0,255).astype('uint8')
-    Rec_img.append()
+    Rec_img.append(rec_img)
 ```
 
 ### Plot the PSNR vs. Nonzero curve, each Reconstructed image with different quantization steps
@@ -321,5 +321,51 @@ for q in Q_list:
 ```python
 ################################################ TODO ###############################################
 # Plot the PSNR vs. Nonzero curve, each Reconstructed image with different quantization steps
+plt.figure()
+plt.plot(Non_zero,PSNR)
+plt.xlabel('Non-zero')
+plt.ylabel('PSNR')
+plt.title('PSNR vs. Non-zero')
 
+for Q in Q_list:
+    plt.figure()
+    plt.imshow(Rec_img[Q_list.index(Q)],cmap='gray')
+    plt.title(f'Reconstructed Image with Q = {Q}')
+    plt.axis('off')
 ```
+
+
+    
+![png](README_files/README_13_0.png)
+    
+
+
+
+    
+![png](README_files/README_13_1.png)
+    
+
+
+
+    
+![png](README_files/README_13_2.png)
+    
+
+
+
+    
+![png](README_files/README_13_3.png)
+    
+
+
+
+    
+![png](README_files/README_13_4.png)
+    
+
+
+
+    
+![png](README_files/README_13_5.png)
+    
+
