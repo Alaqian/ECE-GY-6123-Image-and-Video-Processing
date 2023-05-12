@@ -101,7 +101,7 @@ def EBMA(template,img,x0,y0,range_x,range_y):
     # get the number of rows and columns of the template
     b_rows, b_cols = template.shape[0], template.shape[1]
     # initialize maximum error, motion vector and matchblock
-    min_mse = float
+    min_mse = float('inf')
     xm = 0
     ym = 0
     matchblock = np.zeros((b_rows,b_cols))
@@ -109,7 +109,7 @@ def EBMA(template,img,x0,y0,range_x,range_y):
     for i in range(max(1,x0-range_x),min(rows-b_rows,x0+range_x)):
         for j in range(max(1,y0-range_y),min(cols-b_cols,y0+range_y)):
             candidate = img[i:i+b_rows,j:j+b_cols]
-            error = template-candidate
+            error = template - candidate
             mse_error = mse(error)
             if mse_error < min_mse:
                 # update motion vector, matchblock and max_error if the error of the new block is smaller
@@ -159,19 +159,19 @@ img2_pad = np.pad(img2, [[0,N-(rows-1)%N],[0,N-(cols-1)%N]], mode ='edge')
 
 ################################################ TODO ###############################################
 # initialize the predicted image as zeros with same size as img2_pad
-pred_img_pad = 
+pred_img_pad = np.zeros(img2_pad.shape)
 # Assume first row & col are already reconstructed, copy them directly form img2
-pred_img_pad[0,:] = 
-pred_img_pad[:,0] = 
+pred_img_pad[0,:] = img2_pad[0,:]
+pred_img_pad[:,0] = img2_pad[:,0]
 # Initializae an array for error image, which we will be reusing for the next part
-err_img_pad = 
+err_img_pad = np.zeros(img2_pad.shape)
 
 ################################################ TODO ###############################################
 # Loop through all blocks and for each block find mode that has minimum error
 for x0 in tqdm(np.arange(1,(rows-1), N)):
     for y0 in np.arange(1,(cols-1), N):
         #get the current block
-        patch = 
+        patch = img2_pad[x0:x0+N,y0:y0+N]
         min_MSE=255**2 
 
         # mode 0  Vertical
@@ -179,55 +179,84 @@ for x0 in tqdm(np.arange(1,(rows-1), N)):
         # Vertical perdiction to fill pred_block
         
         # get the error block between the predicted block and the current block
-        err_block = 
+        err_block = patch - pred_block
         # calculate the mse of the error block
-        current_mse = 
+        current_mse = mse(err_block)
         # update the predicted block and error block if the mse is smaller
         if current_mse < min_MSE: 
-            min_pred_block = 
-            min_err_block = 
-            min_MSE = 
+            min_pred_block = pred_block.copy()
+            min_err_block = err_block.copy()
+            min_MSE = current_mse
             
         # mode 1  Horizontal
         pred_block = np.zeros((N,N))
         # Horizontal perdiction to fill pred_block
-        
-        err_block = 
-        current_mse = 
+        pred_block[0,:] = img2_pad[x0-1,y0:y0+N]
+        err_block = patch - pred_block
+        current_mse = mse(err_block)
         if current_mse < min_MSE: 
-            min_pred_block = 
-            min_err_block = 
-            min_MSE = 
+            min_pred_block = pred_block.copy()
+            min_err_block = err_block.copy()
+            min_MSE = current_mse
         
         #mode 2: DC
         pred_block = np.zeros((N,N))
         # DC prediction
-        
-        err_block = 
-        current_mse = 
+        pred_block[:,:] = np.mean(img2_pad[x0-1:x0+N-1, y0-1:y0+N-1])
+        err_block = patch - pred_block
+        current_mse = mse(err_block)
         if current_mse < min_MSE: 
-            min_pred_block = 
-            min_err_block =
-            min_MSE = 
+            min_pred_block = pred_block.copy()
+            min_err_block = err_block.copy()
+            min_MSE = current_mse
 
         #inter-prediction
         #perform EBMA to the current block to find best match in img1
-        xm,ym,pred_block = 
-        err_block = 
-        current_mse = 
+        xm, ym, pred_block = EBMA(patch,img1,x0,y0,range_x,range_y)
+        err_block = pred_block - patch
+        current_mse = mse(err_block)
         if current_mse < min_MSE: 
-            min_pred_block = 
-            min_err_block = 
-            min_MSE = 
+            min_pred_block = pred_block.copy()
+            min_err_block = err_block.copy()
+            min_MSE = current_mse
         
         ## Put the min_pred_block and min_err_block in the correct position in the output images
-        pred_img_pad[...] = ...
-        err_img_pad[...] = ...
+        pred_img_pad[x0:x0 + N, y0:y0 + N] = min_pred_block
+        err_img_pad[x0:x0 + N, y0:y0 + N] = min
 
 # Remove padding
 pred_img = pred_img_pad[0:rows,0:cols]
 err_img = err_img_pad[0:rows,0:cols]
 ```
+
+      0%|          | 0/30 [00:00<?, ?it/s]
+    
+
+
+    ---------------------------------------------------------------------------
+
+    ValueError                                Traceback (most recent call last)
+
+    Cell In[12], line 69
+         65     min_MSE = current_mse
+         67 #inter-prediction
+         68 #perform EBMA to the current block to find best match in img1
+    ---> 69 xm, ym, pred_block = EBMA(patch,img1,x0,y0,range_x,range_y)
+         70 err_block = pred_block - patch
+         71 current_mse = mse(err_block)
+    
+
+    Cell In[10], line 20, in EBMA(template, img, x0, y0, range_x, range_y)
+         18 error = template - candidate
+         19 mse_error = mse(error)
+    ---> 20 if mse_error < min_mse:
+         21     # update motion vector, matchblock and max_error if the error of the new block is smaller
+         22     xm = i - x0
+         23     ym = j - y0
+    
+
+    ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+
 
 
 ```python
