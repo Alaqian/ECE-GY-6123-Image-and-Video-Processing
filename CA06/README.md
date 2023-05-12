@@ -239,7 +239,7 @@ pred_img = pred_img_pad[0:rows,0:cols]
 err_img = err_img_pad[0:rows,0:cols]
 ```
 
-    100%|██████████| 30/30 [00:22<00:00,  1.34it/s]
+    100%|██████████| 30/30 [00:23<00:00,  1.28it/s]
     
 
 
@@ -300,9 +300,9 @@ for q in Q_list:
             # Count number of nonzero in this block, update nonzero
             non_zero += np.count_nonzero(dct_block_quant)
             # IDCT to the quantized dct block, input astype float
-            err_block_rec = cv2.idct(dct_block_quant.astype('float')) 
+            err_block_rec = cv2.idct(dct_block_quant.astype('float'))
             # reconstruct the block
-            rec_img_pad[x0:x0+N, y0:y0+N] = err_block_rec
+            rec_img_pad[x0:x0+N, y0:y0+N] = img2_pad[x0:x0+N, y0:y0+N] + err_block_rec
     # Remove padding
     rec_img = rec_img_pad[0:rows, 0:cols]
     
@@ -327,10 +327,10 @@ plt.xlabel('Non-zero')
 plt.ylabel('PSNR')
 plt.title('PSNR vs. Non-zero')
 
-for Q in Q_list:
+for q in Q_list:
     plt.figure()
-    plt.imshow(Rec_img[Q_list.index(Q)],cmap='gray')
-    plt.title(f'Reconstructed Image with Q = {Q}')
+    plt.imshow(Rec_img[Q_list.index(q)],cmap='gray')
+    plt.title(f'Reconstructed Image with Q = {q}')
     plt.axis('off')
 ```
 
