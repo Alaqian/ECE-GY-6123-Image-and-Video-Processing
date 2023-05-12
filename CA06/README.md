@@ -97,9 +97,9 @@ def mse(error):
 # Return the matching block and the motion vector
 def EBMA(template,img,x0,y0,range_x,range_y):
     # get the number of rows and columns of the image
-    rows, cols = img.shape[0], img.shape[1]
+    rows, cols = img.shape
     # get the number of rows and columns of the template
-    b_rows, b_cols = template.shape[0], template.shape[1]
+    b_rows, b_cols = template.shape
     # initialize maximum error, motion vector and matchblock
     min_mse = float('inf')
     xm = 0
@@ -113,8 +113,8 @@ def EBMA(template,img,x0,y0,range_x,range_y):
             mse_error = mse(error)
             if mse_error < min_mse:
                 # update motion vector, matchblock and max_error if the error of the new block is smaller
-                xm = i - x0
-                ym = j - y0
+                xm = i
+                ym = j
                 matchblock = candidate
                 min_mse = error
     return xm, ym, matchblock
@@ -146,11 +146,11 @@ def quant(dct_coef, q):
 ```python
 ################################################ TODO ###############################################
 # define searching range for EBMA
-range_x = 24    
-range_y = 24
+range_x = 16    
+range_y = 16
 
 # get the row and column size of the images.
-rows, cols = img1.shape[0], img1.shape[1]
+rows, cols = img1.shape
 # define the block size
 N = 8
 
@@ -177,7 +177,12 @@ for x0 in tqdm(np.arange(1,(rows-1), N)):
         # mode 0  Vertical
         pred_block = np.zeros((N,N))
         # Vertical perdiction to fill pred_block
-        
+        for i in range(N):
+            for j in range(N):
+                if j == 0:
+                    pred_block[i,j] = img2_pad[x0+i-1,y0-1]
+                else:
+                    pred_block[i,j] = pred_block[i,j-1]
         # get the error block between the predicted block and the current block
         err_block = patch - pred_block
         # calculate the mse of the error block
@@ -191,7 +196,12 @@ for x0 in tqdm(np.arange(1,(rows-1), N)):
         # mode 1  Horizontal
         pred_block = np.zeros((N,N))
         # Horizontal perdiction to fill pred_block
-        pred_block[0,:] = img2_pad[x0-1,y0:y0+N]
+        for i in range(N):
+            for j in range(N):
+                if i == 0:
+                    pred_block[i,j] = img2_pad[x0-1,y0+j-1]
+                else:
+                    pred_block[i,j] = pred_block[i-1,j]
         err_block = patch - pred_block
         current_mse = mse(err_block)
         if current_mse < min_MSE: 
@@ -202,7 +212,7 @@ for x0 in tqdm(np.arange(1,(rows-1), N)):
         #mode 2: DC
         pred_block = np.zeros((N,N))
         # DC prediction
-        pred_block[:,:] = np.mean(img2_pad[x0-1:x0+N-1, y0-1:y0+N-1])
+        pred_block = np.full((N,N),np.mean(patch))
         err_block = patch - pred_block
         current_mse = mse(err_block)
         if current_mse < min_MSE: 
@@ -237,22 +247,22 @@ err_img = err_img_pad[0:rows,0:cols]
 
     ValueError                                Traceback (most recent call last)
 
-    Cell In[12], line 69
-         65     min_MSE = current_mse
-         67 #inter-prediction
-         68 #perform EBMA to the current block to find best match in img1
-    ---> 69 xm, ym, pred_block = EBMA(patch,img1,x0,y0,range_x,range_y)
-         70 err_block = pred_block - patch
-         71 current_mse = mse(err_block)
+    Cell In[6], line 79
+         75     min_MSE = current_mse
+         77 #inter-prediction
+         78 #perform EBMA to the current block to find best match in img1
+    ---> 79 xm, ym, pred_block = EBMA(patch,img1,x0,y0,range_x,range_y)
+         80 err_block = pred_block - patch
+         81 current_mse = mse(err_block)
     
 
-    Cell In[10], line 20, in EBMA(template, img, x0, y0, range_x, range_y)
+    Cell In[4], line 20, in EBMA(template, img, x0, y0, range_x, range_y)
          18 error = template - candidate
          19 mse_error = mse(error)
     ---> 20 if mse_error < min_mse:
          21     # update motion vector, matchblock and max_error if the error of the new block is smaller
-         22     xm = i - x0
-         23     ym = j - y0
+         22     xm = i
+         23     ym = j
     
 
     ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
