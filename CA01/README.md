@@ -12,7 +12,7 @@ import numpy as np
 
 
 # load a color image
-image = cv2.imread('fruit.jpg')
+image = cv2.imread('super_mario_bros.jpg')
 # convert the color image from BGR to RGB 
 image_rgb = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
 # define function to display images, shows RGB by default
